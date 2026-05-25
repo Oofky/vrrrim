@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vrrrim</title>
+    <link href="../frontend/css/base.css" rel="stylesheet">
+    <script type="module">
+        // import { EditorView, basicSetup } from "https://esm.sh/codemirror@6.0.2";
+        // import { javascript } from "https://esm.sh/@codemirror/lang-javascript@6.2.4";
+
+        // // optional theme
+        // import { oneDark } from "https://esm.sh/@codemirror/theme-one-dark@6.1.3";
+
+        // window.mirrorEditor = new EditorView({
+        //     parent: document.getElementById("code-mirror-editor"),
+        //     doc: 'console.log("Hello, World!");',
+        //     extensions: [basicSetup, javascript(), oneDark],
+        // });
+
+        // features included in basicSetup:
+        // https://codemirror.net/examples/basic/
+
+        // get the current code: mirrorEditor.state.doc.toString();
+
+        import { MergeView } from "https://esm.sh/@codemirror/merge"
+        import { EditorView, basicSetup } from "https://esm.sh/codemirror@6.0.2"
+        import { EditorState } from "https://esm.sh/@codemirror/state"
+        import { oneDark } from "https://esm.sh/@codemirror/theme-one-dark@6.1.3";
+
+        let doc = `class PostcardFile {
+        private final Postcard postcard;
+        public Postcard(Postcard postcard) {
+        this.postcard = postcard;
+        }
+        }
+        `
+
+        let view = new MergeView({
+            a: {
+                doc: "c",
+                extensions: basicSetup
+            },
+            b: {
+                doc: doc,
+                extensions: [
+                    basicSetup,
+                    EditorView.editable.of(false),
+                    EditorState.readOnly.of(true),
+                    EditorView.theme({
+                        ".cm-content": {
+                            "-webkit-user-select": "none",
+                            "-ms-user-select": "none",
+                            "user-select": "none"
+                        }
+                    })
+                ]
+            },
+            parent: document.getElementById("code-mirror-editor")
+        })
+    </script>
+</head>
+
+<body>
+    <h1>vrrrim</h1>
+    <div id="code-mirror-editor"></div>
+</body>
+
+</html>
