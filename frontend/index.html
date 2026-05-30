@@ -15,12 +15,15 @@
 </head>
 
 <body>
-    <button id="privateRoomButton">Create private room</button>
-    <script type="text/javascript">
-        document.getElementById("privateRoomButton").onclick = () => {
-            location.href = "{{ url_for('play') }}"
-        }
-    </script>
+    <form action="{{ url_for('index') }}" method="POST">
+        <input type="hidden" name="clicked" value="play">
+        <button type="submit">Play</button>
+    </form>
+    <form action="{{ url_for('index') }}" method="POST">
+        <input type="hidden" name="clicked" value="private">
+        <button type="submit">Create private room</button>
+    </form>
+
     <h1>What is vrrrim?</h1>
     <p>
         Experience vrrrim, the exhilarating Vim typeracer game where speed meets precision. Race against other players by mastering Vim commands and navigation. 
