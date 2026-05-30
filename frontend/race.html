@@ -26,7 +26,7 @@
 
         import { MergeView } from "https://esm.sh/@codemirror/merge"
         import { EditorView, basicSetup } from "https://esm.sh/codemirror@6.0.2"
-        import { EditorState } from "https://esm.sh/@codemirror/state"
+        import { EditorState, Compartment } from "https://esm.sh/@codemirror/state"
         import { oneDark } from "https://esm.sh/@codemirror/theme-one-dark@6.1.3";
 
         let doc = `class PostcardFile {
@@ -36,11 +36,17 @@
         }
         }
         `
+        const editableComp = new Compartment();
+        const readOnlyComp = new Compartment();
 
         let view = new MergeView({
             a: {
                 doc: "c",
-                extensions: basicSetup
+                extensions: [
+                    basicSetup,
+                    editableComp.of(EditorView.editable.of(false)),
+                    readOnlyComp.of(EditorState.readOnly.of(true)),
+                ]
             },
             b: {
                 doc: doc,
@@ -59,12 +65,34 @@
             },
             parent: document.getElementById("code-mirror-editor")
         })
+
+        document.getElementById('startButton').addEventListener('click', () => {
+            // Set left editor to be editable by player
+            view.a.dispatch({
+                effects: [
+                    editableComp.reconfigure(EditorView.editable.of(true)),
+                    readOnlyComp.reconfigure(EditorState.readOnly.of(false))
+                ]
+            })
+        });
     </script>
 </head>
 
 <body>
     <h1>vrrrim</h1>
+
     <p>Room code (for debug only): {{ code }}</p>
+    <button id="copyButton">Copy invite link</button>
+    <script type="text/javascript">
+        document.getElementById('copyButton').addEventListener('click', () => {
+            navigator.clipboard.writeText(
+                '{{ url_for("index", _external=True) }}' + '?' + '{{ code }}'
+            );
+        });
+    </script>
+
+    <button id="startButton">Start</button>
+
     <div id="code-mirror-editor"></div>
 </body>
 
