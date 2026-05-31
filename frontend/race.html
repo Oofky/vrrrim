@@ -5,24 +5,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>vrrrim</title>
-    <link rel="icon" href="../frontend/assets/logos/favicon.ico">
-
-    <link href="../frontend/css/base.css" rel="stylesheet">
+    <link href="css/base.css" rel="stylesheet">
     <script type="module">
         import { MergeView } from "https://esm.sh/@codemirror/merge"
         import { EditorView, basicSetup } from "https://esm.sh/codemirror@6.0.2"
-        import { EditorState } from "https://esm.sh/@codemirror/state"
+        import { EditorState, Compartment } from "https://esm.sh/@codemirror/state"
+        import { keymap } from "https://esm.sh/@codemirror/view"
+        import { indentWithTab } from "https://esm.sh/@codemirror/commands"
         import { oneDark } from "https://esm.sh/@codemirror/theme-one-dark@6.1.3";
+        import { vim } from "https://esm.sh/@replit/codemirror-vim"
 
-        let doc = `function greet(name) {
+        import { diff_match_patch } from "https://esm.sh/diff-match-patch"
+
+        let start_doc = ""
+        let result_doc = `function greet(name) {
     console.log("Hello, " + name + "!");
 }`
 
+        const editableComp = new Compartment();
+        const readOnlyComp = new Compartment();
+
+        const dmp = new diff_match_patch();
+        const maxDist = dmp.diff_levenshtein(dmp.diff_main(start_doc, result_doc));
+
         let view = new MergeView({
             a: {
-                doc: "", // input file to be generated at a later stage
+                doc: start_doc,
                 extensions: [
+                    vim(),
+                    keymap.of([indentWithTab]),
                     basicSetup,
+                    editableComp.of(EditorView.editable.of(false)),
+                    readOnlyComp.of(EditorState.readOnly.of(true)),
                     EditorView.theme({
                         ".cm-cursor, .cm-dropCursor": {
                             "border-left-color": "#F5F0E8"
@@ -31,7 +45,7 @@
                 ]
             },
             b: {
-                doc: doc,
+                doc: result_doc,
                 extensions: [
                     basicSetup,
                     EditorView.editable.of(false),
@@ -47,6 +61,34 @@
             },
             parent: document.getElementById("code-mirror-editor")
         })
+
+        document.getElementById('startButton').addEventListener('click', () => {
+            // Set left editor to be editable by player
+            view.a.dispatch({
+                effects: [
+                    editableComp.reconfigure(EditorView.editable.of(true)),
+                    readOnlyComp.reconfigure(EditorState.readOnly.of(false))
+                ]
+            });
+            // Start calculating progress
+            calcProgressLoop();
+        });
+
+        function calcProgressLoop() {
+            const diffs = dmp.diff_main(view.a.state.doc.toString(), result_doc);
+            const dist = dmp.diff_levenshtein(diffs);
+            const progress = Math.max(0, Math.floor((maxDist - dist) / maxDist * 100));
+            
+            document.getElementById('progressBar').value = progress;
+            //TODO: Should send this data to server as well, so server can send to other players
+
+            if (progress >= 100) {
+                alert("You win!");
+                location.href='{{ url_for("index") }}';
+            } else {
+                setTimeout(calcProgressLoop, 1000);
+            }
+        }
     </script>
 </head>
 
@@ -54,6 +96,7 @@
     <nav style="display: flex; justify-content: space-between; align-items: center;
             padding: 12px 24px;">
         <span>
+            <!-- Vrrrim Logo -->
             <img src="../frontend/assets/logos/logo.png" alt="vrrrim logo" style="height: 40px; cursor: pointer;">
         </span>
         <div style="display: flex; align-items: center; gap: 20px;">
@@ -63,6 +106,21 @@
             </button>
         </div>
     </nav>
+    
+    <p>Room code (for debug only): {{ code }}</p>
+    <button id="copyButton">Copy invite link</button>
+    <script type="text/javascript">
+        document.getElementById('copyButton').addEventListener('click', () => {
+            navigator.clipboard.writeText(
+                '{{ url_for("index", _external=True) }}' + '?' + '{{ code }}'
+            );
+        });
+    </script>
+
+    <button id="startButton">Start</button>
+    <label for="progressBar">Your progress: </label>
+    <progress id="progressBar" value="0" max="100"></progress>
+
     <div id="editor-wrapper" style="display: flex; flex-direction: column; margin: 16px 24px;">
         
         <!-- panel headers -->
