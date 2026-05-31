@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>vrrrim</title>
-    <link rel="icon" href="../frontend/assets/logos/favicon.ico">
+    <link rel="icon" href="assets/logos/favicon.ico">
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
@@ -21,7 +21,7 @@
 
 <body>
     <div>
-        <img src="../frontend/assets/logos/logo.png" alt="vrrrim logo" class="logo" height="125px">
+        <img src="assets/logos/logo.png" alt="vrrrim logo" class="logo" height="125px">
     </div>
 
     <div id="wrapper">
@@ -45,14 +45,14 @@
                         <input type="checkbox" checked><span class="text">Keep me signed in </span>
                     </label>
                 </div>
-                <form action="{{ url_for('index') }}" method="POST">
-                    <input type="hidden" name="clicked" value="play">
-                    <button type="submit">Play</button>
-                </form>
-                <form action="{{ url_for('index') }}" method="POST">
-                    <input type="hidden" name="clicked" value="private">
-                    <button type="submit">Create private room</button>
-                </form>
+            </form>
+            <form action="{{ url_for('index') }}" method="POST">
+                <input type="hidden" name="clicked" value="play">
+                <button type="submit">Play</button>
+            </form>
+            <form action="{{ url_for('index') }}" method="POST">
+                <input type="hidden" name="clicked" value="private">
+                <button type="submit">Create private room</button>
             </form>
             <div class="hr"></div>
             <a href="#" id="froget-pass">Forget Password?</a>

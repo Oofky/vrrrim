@@ -48,4 +48,4 @@ def generate_private_room():
     return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
 
 if __name__ == '__main__':
-    app.run(host='localhost', port=5000, debug=True)
+    app.run(host='localhost', port=5500, debug=True)

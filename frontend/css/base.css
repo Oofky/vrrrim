@@ -96,8 +96,9 @@ h1 {
     border-color: #00BFFF;
 }
 
-/* Submit button */
-.form-group input[type="submit"] {
+/* Play and create private room button */
+.form-group button, 
+.form-group input[type="button"] {
     width: 100%;
     padding: 16px;
     background-color: #00BFFF;
@@ -111,12 +112,12 @@ h1 {
     transition: background-color 0.2s, box-shadow 0.2s;
 }
 
-/* Submit button hover */
+/* Play and create private room button hover */
 .form-group input[type="submit"]:hover {
     background-color: #00A8E0;
 }
 
-/* Submit button when actively clicked */
+/* Play and create private room button when actively clicked */
 .form-group input[type="submit"]:active {
     background-color: #0090C0;
     box-shadow: 0 0 12px #00BFFF88;
