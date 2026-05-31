@@ -1,3 +1,4 @@
+/* Essential styles for vrrrim frontend */
 body {
     background-color: #0D1117;
     color: #8B949E;
@@ -33,7 +34,7 @@ h1 {
     margin: 40px auto;
 }
 
-/* The Login / Sign Up tab switcher */
+/* Login / Sign up button */
 #table {
     display: flex;
     margin-bottom: 28px;
@@ -53,7 +54,7 @@ h1 {
     transition: background-color 0.2s, color 0.2s;
 }
 
-/* Active tab = cyan filled */
+/* Active tab: cyan */
 #table a.active {
     background-color: #00BFFF;
     color: #0D1117;
@@ -64,6 +65,10 @@ h1 {
 #table a:not(.active):hover {
     background-color: #2D3748;
     color: #F5F0E8;
+}
+
+#signin .form-group {
+    margin-bottom: 15px;
 }
 
 /* Form labels */
@@ -96,63 +101,99 @@ h1 {
     border-color: #00BFFF;
 }
 
-/* Play and create private room button */
-.form-group button, 
-.form-group input[type="button"] {
+/* Play and create private room buttons */
+#action-buttons {
+    display: flex;
+    gap: 20px;
+    margin-top: 28px;
+}
+
+#action-buttons form {
+    flex: 1;
+    margin: 0;
+}
+
+#action-buttons button {
+    all: unset;
+    display: block;
     width: 100%;
+    box-sizing: border-box;
     padding: 16px;
-    background-color: #00BFFF;
-    color: #0D1117;
+    text-align: center;
     font-family: 'Barlow', sans-serif;
     font-size: 16px;
     font-weight: 600;
-    border: none;
     border-radius: 6px;
     cursor: pointer;
     transition: background-color 0.2s, box-shadow 0.2s;
 }
 
-/* Play and create private room button hover */
-.form-group input[type="submit"]:hover {
-    background-color: #00A8E0;
+#action-buttons #btn-play {
+    background-color: #00BFFF !important;
+    color: #0D1117 !important;
 }
 
-/* Play and create private room button when actively clicked */
-.form-group input[type="submit"]:active {
-    background-color: #0090C0;
+#action-buttons #btn-play:hover { background-color: #FF6B2B !important; }
+#action-buttons #btn-play:active {
+    background-color: #FF6B2B !important;
     box-shadow: 0 0 12px #00BFFF88;
 }
 
-.form-group {
-    margin-bottom: 20px;
+#action-buttons #btn-private {
+    background-color: #00BFFF !important;
+    color: #0D1117 !important;
 }
 
-/* Hide the checkbox and forget password rows to match the image */
+#action-buttons #btn-private:hover { background-color: #FFB800 !important; }
+#action-buttons #btn-private:active {
+    background-color: #FFB800 !important;
+    box-shadow: 0 0 12px #7C3AED88;
+}
+
+
 #checkbox,
 .hr,
 #froget-pass {
     display: none;
 }
 
-.russo-one-regular {
-  font-family: "Russo One", sans-serif;
-  font-weight: 400;
-  font-style: normal;
+/* Progress Bar Styling */
+progress {
+    width: 100%;
+    height: 25px;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 12px;
 }
 
-.barlow-regular {
-  font-family: "Barlow", sans-serif;
-  font-weight: 400;
-  font-style: normal;
+progress::before {
+    content: "Loading: " + attr(value) + "%";
+    display: block;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    font-size: 14px;
+    color: #F5F0E8;
+    font-family: 'Barlow', sans-serif;
+    background-color: #0D1117;
 }
 
+progress::-webkit-progress-bar {
+    background-color: #0D1117;
+}
+
+progress::-webkit-progress-value {
+    background-color: #00BFFF;
+}
+
+/* Prevents copy-pasting for target code */
 .prevent-select {
-  -webkit-user-select: none; /* Safari */
-  -ms-user-select: none; /* IE 10 and IE 11 */
-  user-select: none; /* Standard syntax */
+  -webkit-user-select: none; 
+  -ms-user-select: none;
+  user-select: none; 
 }
 
-/* CAN BE REMOVED IF NEED BE */
 .cm-mergeView {
     width: 100%;
 }
@@ -165,4 +206,43 @@ h1 {
 .cm-mergeView .cm-mergeViewEditor {
     flex: 1;
     min-width: 0;
+}
+
+/* Start button and copy invite link buttons */
+#startButton {
+    background-color: #00BFFF;
+    color: #0D1117;
+    border: none;
+    padding: 10px 28px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+#copyButton {
+    background-color: transparent;
+    color: #8B949E;
+    border: 1px solid #30363D;
+    padding: 10px 20px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+}
+
+/* Google fonts */
+.russo-one-regular {
+  font-family: "Russo One", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.barlow-regular {
+  font-family: "Barlow", sans-serif;
+  font-weight: 400;
+  font-style: normal;
 }
