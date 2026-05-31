@@ -19,7 +19,7 @@
         import { vim } from "https://esm.sh/@replit/codemirror-vim"
         import { diff_match_patch } from "https://esm.sh/diff-match-patch"
 
-        let start_doc = ""
+        let start_doc = `console.log("Jello");`
         let result_doc = `function greet(name) {
     console.log("Hello, " + name + "!");
 }`
@@ -80,7 +80,7 @@
                 return(wait(1000));
             }).then(() => {
                 startButton.textContent = 'GO!';
-                
+
                 // Set left editor to be editable by player
                 view.a.dispatch({
                     effects: [
