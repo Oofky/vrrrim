@@ -1,19 +1,136 @@
 body {
     background-color: #0D1117;
     color: #8B949E;
+    padding-top: 40px;
 }
 
 p {
     font-family: "Barlow", sans-serif;
     font-size: 16px;
     line-height: 1.5;
-    margin-bottom: 20px;
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto 20px auto;
 }
 
 h1 {
     color: #F5F0E8;
     font-family: "Russo One", sans-serif;
     text-align: center;
+}
+
+.logo {
+    display: block;
+    margin: 0 auto;
+}
+
+#wrapper {
+    background-color: #161B22;
+    border: 1px solid #00D4FF;
+    border-radius: 12px;
+    padding: 32px;
+    max-width: 500px;
+    margin: 40px auto;
+}
+
+/* The Login / Sign Up tab switcher */
+#table {
+    display: flex;
+    margin-bottom: 28px;
+}
+
+#table a {
+    flex: 1;
+    text-align: center;
+    padding: 12px;
+    border-radius: 6px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 16px;
+    cursor: pointer;
+    text-decoration: none;
+    color: #8B949E;
+    background-color: #1F2937;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+/* Active tab = cyan filled */
+#table a.active {
+    background-color: #00BFFF;
+    color: #0D1117;
+    font-weight: 600;
+}
+
+/* Hover on inactive tab */
+#table a:not(.active):hover {
+    background-color: #2D3748;
+    color: #F5F0E8;
+}
+
+/* Form labels */
+.form-group label {
+    display: block;
+    font-family: 'Barlow', sans-serif;
+    color: #F5F0E8;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+/* Text inputs */
+.form-group input[type="text"],
+.form-group input[type="password"] {
+    width: 100%;
+    padding: 14px 16px;
+    background-color: #1F2937;
+    border: 1px solid #30363D;
+    border-radius: 6px;
+    color: #F5F0E8;
+    font-family: 'Barlow', sans-serif;
+    font-size: 15px;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="password"]:focus {
+    border-color: #00BFFF;
+}
+
+/* Submit button */
+.form-group input[type="submit"] {
+    width: 100%;
+    padding: 16px;
+    background-color: #00BFFF;
+    color: #0D1117;
+    font-family: 'Barlow', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+/* Submit button hover */
+.form-group input[type="submit"]:hover {
+    background-color: #00A8E0;
+}
+
+/* Submit button when actively clicked */
+.form-group input[type="submit"]:active {
+    background-color: #0090C0;
+    box-shadow: 0 0 12px #00BFFF88;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+/* Hide the checkbox and forget password rows to match the image */
+#checkbox,
+.hr,
+#froget-pass {
+    display: none;
 }
 
 .russo-one-regular {
@@ -32,4 +149,19 @@ h1 {
   -webkit-user-select: none; /* Safari */
   -ms-user-select: none; /* IE 10 and IE 11 */
   user-select: none; /* Standard syntax */
+}
+
+/* CAN BE REMOVED IF NEED BE */
+.cm-mergeView {
+    width: 100%;
+}
+
+.cm-mergeView .cm-mergeViewEditors {
+    display: flex;
+    width: 100%;
+}
+
+.cm-mergeView .cm-mergeViewEditor {
+    flex: 1;
+    min-width: 0;
 }
