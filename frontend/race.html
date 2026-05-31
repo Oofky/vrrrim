@@ -80,19 +80,18 @@
                 return(wait(1000));
             }).then(() => {
                 startButton.textContent = 'GO!';
-                return(wait(1000));
-            });
+                
+                // Set left editor to be editable by player
+                view.a.dispatch({
+                    effects: [
+                        editableComp.reconfigure(EditorView.editable.of(true)),
+                        readOnlyComp.reconfigure(EditorState.readOnly.of(false))
+                    ]
+                });
 
-            // Set left editor to be editable by player
-            view.a.dispatch({
-                effects: [
-                    editableComp.reconfigure(EditorView.editable.of(true)),
-                    readOnlyComp.reconfigure(EditorState.readOnly.of(false))
-                ]
-            });
-
-            // Start calculating progress
-            calcProgressLoop();
+                // Start calculating progress
+                calcProgressLoop();
+            })
         });
 
         function calcProgressLoop() {
