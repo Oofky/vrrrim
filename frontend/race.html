@@ -19,7 +19,7 @@
         import { vim } from "https://esm.sh/@replit/codemirror-vim"
         import { diff_match_patch } from "https://esm.sh/diff-match-patch"
 
-        let start_doc = ""
+        let start_doc = `console.log("Jello");`
         let result_doc = `function greet(name) {
     console.log("Hello, " + name + "!");
 }`
@@ -64,16 +64,34 @@
             parent: document.getElementById("code-mirror-editor")
         })
 
-        document.getElementById('startButton').addEventListener('click', () => {
-            // Set left editor to be editable by player
-            view.a.dispatch({
-                effects: [
-                    editableComp.reconfigure(EditorView.editable.of(true)),
-                    readOnlyComp.reconfigure(EditorState.readOnly.of(false))
-                ]
-            });
-            // Start calculating progress
-            calcProgressLoop();
+        const startButton = document.getElementById('startButton');
+        startButton.addEventListener('click', () => {
+            // Disable the button so player cannot click it multiple times
+            startButton.disabled = true;
+
+            // Countdown 3s
+            const wait = (time) => new Promise(resolve => setTimeout(resolve, time));
+            startButton.textContent = '3...';
+            wait(1000).then(() => {
+                startButton.textContent = '2...';
+                return(wait(1000));
+            }).then(() => {
+                startButton.textContent = '1...';
+                return(wait(1000));
+            }).then(() => {
+                startButton.textContent = 'GO!';
+
+                // Set left editor to be editable by player
+                view.a.dispatch({
+                    effects: [
+                        editableComp.reconfigure(EditorView.editable.of(true)),
+                        readOnlyComp.reconfigure(EditorState.readOnly.of(false))
+                    ]
+                });
+
+                // Start calculating progress
+                calcProgressLoop();
+            })
         });
 
         function calcProgressLoop() {
@@ -85,9 +103,8 @@
             //TODO: Should send this data to server as well, so server can send to other players
 
             if (progress >= 100) {
-                // document.getElementById('progressBar').value = 100;
                 setTimeout(() => {
-                    alert("You win!");
+                    alert("You win!"); //TODO: make this look nicer
                     location.href = '{{ url_for("index") }}';
                 }, 100);
             } else {
@@ -96,8 +113,6 @@
         }
     </script>
 </head>
-
-<!-- TODO: Add countdown -->
 
 <body>
     <nav style="display: flex; justify-content: space-between; align-items: center; padding: 0px 32px; margin: 0 auto;">
