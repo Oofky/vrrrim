@@ -14,7 +14,7 @@ p {
     margin: 0 auto 20px auto;
 }
 
-h1 {
+h1, h2 {
     color: #F5F0E8;
     font-family: "Russo One", sans-serif;
     text-align: center;
@@ -25,12 +25,28 @@ h1 {
     margin: 0 auto;
 }
 
+.avatar {
+    width: 200px;
+    height: 200px;
+    display: block;
+    margin: 0 auto;
+}
+
 #wrapper {
     background-color: #161B22;
     border: 1px solid #00D4FF;
     border-radius: 12px;
     padding: 32px;
     max-width: 500px;
+    margin: 40px auto;
+}
+
+#testing {
+    background-color: #161B22;
+    border: 1px solid #00D4FF;
+    border-radius: 12px;
+    padding: 32px;
+    max-width: 85%;
     margin: 40px auto;
 }
 
@@ -232,6 +248,52 @@ progress::-webkit-progress-value {
     border-radius: 6px;
     cursor: pointer;
     transition: border-color 0.2s, color 0.2s;
+}
+
+#color-picker {
+    margin: 24px 0 20px;
+}
+
+.picker-label {
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    color: #8B949E;
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+/* Color swatches */
+#swatches {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.swatch {
+    height: 44px;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.15s;
+}
+
+.swatch:hover {
+    transform: scale(1.05);
+}
+
+.swatch.active {
+    border-color: #00D4FF;
+    box-shadow: 0 0 0 1px #00D4FF;
+}
+
+#color-name {
+    font-family: 'Barlow', sans-serif;
+    font-size: 12px;
+    color: #8B949E;
+    text-align: center;
+    margin-top: 6px;
+    height: 16px;
 }
 
 /* Google fonts */
