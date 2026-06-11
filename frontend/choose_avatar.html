@@ -34,9 +34,7 @@
 
         <div id="choose-avatar">
             <div id="avatars">
-                <!-- TODO: replace image with a blank white car template-->
-                <img src="https://cdn-icons-png.flaticon.com/512/171/171239.png" alt="Default" class="avatar"
-                    id="avatar1"> 
+                <img src="assets/logos/avatar.png" class="avatar" id="default-avatar" alt="Default Avatar"> 
             </div>
             <div id="color-picker">
                 <label style="color: #F5F0E8; font-family: 'Barlow', sans-serif; 
@@ -111,7 +109,7 @@
             swatch.addEventListener('click', () => {
                 document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
                 swatch.classList.add('active');
-                document.getElementById('avatar1').style.filter = swatch.dataset.color;
+                document.getElementById('default-avatar').style.filter = swatch.dataset.color;
                 document.getElementById('color-name').textContent = swatch.dataset.name;
             });
         });
