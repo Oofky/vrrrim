@@ -203,6 +203,27 @@ progress::-webkit-progress-value {
     background-color: #00BFFF;
 }
 
+#progress-track {
+    position: relative;
+    width: 92.5%;
+    margin-top: 8px;
+}
+
+#race-car {
+    position: absolute;
+    height: 75px;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 0%;
+    transition: left 0.1s ease-in-out;
+    z-index: 1;
+}
+
+#progress-wrapper progress {
+    width: 100%;
+    display: block;
+}
+
 /* Prevents copy-pasting for target code */
 .prevent-select {
   -webkit-user-select: none; 
@@ -296,6 +317,105 @@ progress::-webkit-progress-value {
     height: 16px;
 }
 
+/* Vim cheatsheet styling */
+#cheatsheet-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 1000;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 40px;
+}
+
+#cheatsheet-overlay.active {
+    display: flex;
+}
+
+#cheatsheet-modal {
+    background: #161B22;
+    border: 1px solid #00D4FF;
+    border-radius: 12px;
+    padding: 32px;
+    width: 90%;
+    max-width: 900px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+#cheatsheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+}
+
+#cheatsheet-title {
+    font-family: "Russo One", sans-serif;
+    font-size: 32px;
+    color: #00BFFF;
+    margin: 0;
+}
+
+#closeCheatsheet {
+    background: #1F2937;
+    border: 1px solid #30363D;
+    color: #F5F0E8;
+    font-family: "Barlow", sans-serif;
+    padding: 8px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+#closeCheatsheet:hover {
+    background: #2D3748;
+}
+
+#cheatsheet-columns {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.col-title {
+    font-family: "Russo One", sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #00BFFF;
+    margin-bottom: 12px;
+}
+
+.cheat-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #1C2128;
+    border: 1px solid #30363D;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+}
+
+.cheat-item kbd {
+    background: #042d2f;
+    border: 1px;
+    color: #51d4ff;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    min-width: 32px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.cheat-item span {
+    font-family: "Barlow", sans-serif;
+    font-size: 13px;
+    color: #8B949E;
+}
+
 /* Google fonts */
 .russo-one-regular {
   font-family: "Russo One", sans-serif;
@@ -305,6 +425,15 @@ progress::-webkit-progress-value {
 
 .barlow-regular {
   font-family: "Barlow", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* <weight>: Use a value from 100 to 800
+<uniquifier>: Use a unique and descriptive class name for each weight, e.g. .jetbrains-mono-400 for regular, .jetbrains-mono-700 for bold, etc. */
+.jetbrains-mono-400 {
+  font-family: "JetBrains Mono", monospace;
+  font-optical-sizing: auto;
   font-weight: 400;
   font-style: normal;
 }

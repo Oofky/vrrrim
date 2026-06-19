@@ -44,41 +44,49 @@
                 <div id="swatches">
                     <button class="swatch active" 
                         data-color="brightness(0) saturate(100%) invert(55%) sepia(51%) saturate(3077%) hue-rotate(164deg) brightness(105%) contrast(108%)" 
+                        data-hex="#00BFFF"
                         data-name="Neon Cyan"
                         style="background:#00BFFF;"></button>
 
                     <button class="swatch" 
                         data-color="brightness(0) saturate(100%) invert(57%) sepia(38%) saturate(6145%) hue-rotate(343deg) brightness(107%) contrast(101%)" 
+                        data-hex="#FF6B2B"
                         data-name="Orange"
                         style="background:#FF6B2B;"></button>
 
                     <button class="swatch" 
                         data-color="brightness(0) saturate(100%) invert(63%) sepia(99%) saturate(987%) hue-rotate(1deg) brightness(104%) contrast(103%)" 
+                        data-hex="#FFB800"
                         data-name="Yellow"
                         style="background:#FFB800;"></button>
 
                     <button class="swatch" 
-                        data-color="brightness(0) saturate(100%) invert(57%) sepia(38%) saturate(6145%) hue-rotate(343deg) brightness(107%) contrast(101%)" 
+                        data-color="brightness(0) saturate(100%) invert(25%) sepia(60%) saturate(5799%) hue-rotate(256deg) brightness(97%) contrast(92%)" 
+                        data-hex="#7C3AED"
                         data-name="Purple"
                         style="background:#7C3AED;"></button>
 
                     <button class="swatch" 
                         data-color="brightness(0) saturate(100%) invert(60%) sepia(99%) saturate(2226%) hue-rotate(136deg) brightness(100%) contrast(101%)" 
+                        data-hex="#00CEC9"
                         data-name="Teal"
                         style="background:#00CEC9;"></button>
 
                     <button class="swatch" 
                         data-color="brightness(0) saturate(100%) invert(38%) sepia(67%) saturate(2243%) hue-rotate(307deg) brightness(95%) contrast(91%)"
+                        data-hex="#E84393"
                         data-name="Pink"
                         style="background:#E84393;"></button>
 
                     <button class="swatch" 
                         data-color="brightness(0) saturate(100%) invert(63%) sepia(100%) saturate(362%) hue-rotate(42deg) brightness(95%) contrast(97%)" 
+                        data-hex="#7ED321"
                         data-name="Lime"
                         style="background:#7ED321;"></button>
 
                     <button class="swatch" 
                         data-color="brightness(0) saturate(100%) invert(32%) sepia(73%) saturate(4782%) hue-rotate(341deg) brightness(105%) contrast(82%)" 
+                        data-hex="#E8404A"
                         data-name="Red"
                         style="background:#E8404A;"></button>
                 </div>
@@ -87,12 +95,17 @@
         </div>
 
         <div id="action-buttons">
-            <form action="{{ url_for('index') }}" method="POST">
+            <!-- Default colours set to white -->
+            <form action="{{ url_for('choose_avatar') }}" method="POST">
                 <input type="hidden" name="clicked" value="play">
+                <input type="hidden" name="car_color" id="car_color_input_play" value="#F5F0E8">
+                <input type="hidden" name="car_filter" id="car_filter_input_play" value="brightness(100)">
                 <button type="submit" id="btn-play">Play</button>
             </form>
-            <form action="{{ url_for('index') }}" method="POST">
+            <form action="{{ url_for('choose_avatar') }}" method="POST">
                 <input type="hidden" name="clicked" value="private">
+                <input type="hidden" name="car_color" id="car_color_input_private" value="#F5F0E8">
+                <input type="hidden" name="car_filter" id="car_filter_input_private" value="brightness(100)">
                 <button type="submit" id="btn-private">Create private room</button>
             </form>
         </div>
@@ -111,6 +124,12 @@
                 swatch.classList.add('active');
                 document.getElementById('default-avatar').style.filter = swatch.dataset.color;
                 document.getElementById('color-name').textContent = swatch.dataset.name;
+
+                document.getElementById('car_color_input_play').value = swatch.dataset.hex;
+                document.getElementById('car_color_input_private').value = swatch.dataset.hex;
+
+                document.getElementById('car_filter_input_play').value = swatch.dataset.color;
+                document.getElementById('car_filter_input_private').value = swatch.dataset.color;
             });
         });
     </script>

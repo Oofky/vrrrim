@@ -51,12 +51,8 @@
 
             <div id="action-buttons">
                 <form action="{{ url_for('index') }}" method="POST">
-                    <input type="hidden" name="clicked" value="play">
-                    <button type="submit" id="btn-play">Play</button>
-                </form>
-                <form action="{{ url_for('index') }}" method="POST">
-                    <input type="hidden" name="clicked" value="private">
-                    <button type="submit" id="btn-private">Create private room</button>
+                    <input type="hidden" name="clicked" value="login">
+                    <button type="submit" id="btn-play">Login</button>
                 </form>
             </div>
 
@@ -94,6 +90,9 @@
             tab.addEventListener('click', () => {
                 document.querySelectorAll('#table a').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
+
+                // Change the button name to match the active tab
+                document.getElementById('btn-play').textContent = tab.textContent;
             });
         });
     </script>

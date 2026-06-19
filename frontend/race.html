@@ -9,6 +9,13 @@
 
     <link href="css/base.css" rel="stylesheet">
 
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Russo+One&display=swap"
+        rel="stylesheet">
+
     <script type="module">
         import { MergeView } from "https://esm.sh/@codemirror/merge"
         import { EditorView, basicSetup } from "https://esm.sh/codemirror@6.0.2"
@@ -19,7 +26,7 @@
         import { vim } from "https://esm.sh/@replit/codemirror-vim"
         import { diff_match_patch } from "https://esm.sh/diff-match-patch"
 
-        let start_doc = `console.log("Jello");`
+        let start_doc = `console.log("Jello! ");`
         let result_doc = `function greet(name) {
     console.log("Hello, " + name + "!");
 }`
@@ -74,10 +81,10 @@
             startButton.textContent = '3...';
             wait(1000).then(() => {
                 startButton.textContent = '2...';
-                return(wait(1000));
+                return (wait(1000));
             }).then(() => {
                 startButton.textContent = '1...';
-                return(wait(1000));
+                return (wait(1000));
             }).then(() => {
                 startButton.textContent = 'GO!';
 
@@ -100,12 +107,13 @@
             const progress = Math.max(0, Math.floor((maxDist - dist) / maxDist * 100));
 
             document.getElementById('progressBar').value = progress;
+            document.getElementById('race-car').style.left = `${progress}%`; 
             //TODO: Should send this data to server as well, so server can send to other players
 
             if (progress >= 100) {
                 setTimeout(() => {
                     alert("You win!"); //TODO: make this look nicer
-                    location.href = '{{ url_for("index") }}';
+                    location.href = '{{ url_for("choose_avatar") }}';
                 }, 100);
             } else {
                 setTimeout(calcProgressLoop, 200);
@@ -121,8 +129,7 @@
             <img src="assets/logos/logo.png" alt="vrrrim logo" style="height: 50px; cursor: pointer;">
         </span>
         <div style="display: flex; align-items: center; gap: 20px;">
-            <!-- TODO: Implement Vim cheatsheet -->
-            <button style="background: transparent; border: 1px solid #F5F0E8; color: #F5F0E8;
+            <button data-cheatsheet="true" style="background: transparent; border: 1px solid #F5F0E8; color: #F5F0E8;
                        padding: 8px 18px; font-family: 'Barlow', sans-serif; cursor: pointer;">Vim Cheatsheet</button>
         </div>
     </nav>
@@ -159,8 +166,6 @@
         <div style="display: flex;">
             <div style="flex: 1; background: #1C2128; border: 1px solid #30363D; border-top: none;
                     padding: 4px 12px; display: flex; justify-content: space-between;">
-                <!-- <span style="color: #8B949E; font-family: 'Barlow', sans-serif; font-size: 12px;">Line 1, Col 1</span>
-                <span style="color: #8B949E; font-family: 'Barlow', sans-serif; font-size: 12px;">0% Complete</span> -->
             </div>
             <div style="flex: 1; background: #1C2128; border: 1px solid #30363D; border-top: none; border-left: none;
                     padding: 4px 12px; display: flex; justify-content: space-between;">
@@ -170,8 +175,61 @@
         </div>
     </div>
 
-    <label for="progressBar" style="color: #79838c; font-family: 'Barlow', sans-serif;">Your progress: </label>
-    <progress id="progressBar" value="0" max="100"></progress>
+    <div id="progress-wrapper" style="padding: 0px 32px; margin-top: 16px">
+        <label for="progressBar" style="color: #79838c; font-family: 'Barlow', sans-serif;">Your progress: </label>
+        <div id="progress-track">
+            <img src="assets/logos/avatar.png" id="race-car"> 
+            <progress id="progressBar" value="0" max="100"></progress>
+        </div>
+    </div>
+
+    <!-- Cheatsheet overlay -->
+    <div id="cheatsheet-overlay">
+        <div id="cheatsheet-modal">
+            <div id="cheatsheet-header">
+                <h1 id="cheatsheet-title">VIM <span style="color: #FFB800;">CHEATSHEET</span></h2>
+                    <button id="closeCheatsheet">Close</button>
+            </div>
+            <div id="cheatsheet-body">
+                <div id="cheatsheet-columns">
+                    <div class="cheatsheet-col">
+                        <h3 class="col-title">Basic Movements</h3>
+                        <div class="cheat-item"><kbd>h</kbd><span>Move cursor left</span></div>
+                        <div class="cheat-item"><kbd>j</kbd><span>Move cursor down</span></div>
+                        <div class="cheat-item"><kbd>k</kbd><span>Move cursor up</span></div>
+                        <div class="cheat-item"><kbd>l</kbd><span>Move cursor right</span></div>
+                        <div class="cheat-item"><kbd>w</kbd><span>Move cursor to beginning of next word</span></div>
+                        <div class="cheat-item"><kbd>b</kbd><span>Move cursor to beginning of previous word</span></div>
+                        <div class="cheat-item"><kbd>e</kbd><span>Move cursor to end of current word</span></div>
+                        <div class="cheat-item"><kbd>0</kbd><span>Move cursor to beginning of line</span></div>
+                        <div class="cheat-item"><kbd>$</kbd><span>Move cursor to end of line</span></div>
+                        <div class="cheat-item"><kbd>gg</kbd><span>Move cursor to beginning of file</span></div>
+                    </div>
+                    <div class="cheatsheet-col">
+                        <h3 class="col-title">Editing</h3>
+                        <div class="cheat-item"><kbd>i</kbd><span>Insert before cursor</span></div>
+                        <div class="cheat-item"><kbd>a</kbd><span>Insert after cursor</span></div>
+                        <div class="cheat-item"><kbd>o</kbd><span>Open line below</span></div>
+                        <div class="cheat-item"><kbd>O</kbd><span>Open line above</span></div>
+                        <div class="cheat-item"><kbd>x</kbd><span>Delete current character</span></div>
+                        <div class="cheat-item"><kbd>dw</kbd><span>Delete word</span></div>
+                        <div class="cheat-item"><kbd>dd</kbd><span>Delete current line</span></div>
+                        <div class="cheat-item"><kbd>yy</kbd><span>Copy current line</span></div>
+                        <div class="cheat-item"><kbd>p</kbd><span>Paste after cursor</span></div>
+                    </div>
+                    <div class="cheatsheet-col">
+                        <h3 class="col-title">Advanced</h3>
+                        <div class="cheat-item"><kbd>yyp</kbd><span>Duplicate line</span></div>
+                        <div class="cheat-item"><kbd>ciw</kbd><span>Change inner word</span></div>
+                        <div class="cheat-item"><kbd>ci"</kbd><span>Change inside quotes</span></div>
+                        <div class="cheat-item"><kbd>di{</kbd><span>Delete inside braces</span></div>
+                        <div class="cheat-item"><kbd>>></kbd><span>Indent line</span></div>
+                        <div class="cheat-item"><kbd><<</kbd><span>Unindent line</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- JavaScript for copying invite link to clipboard -->
     <script type="text/javascript">
@@ -180,6 +238,35 @@
                 '{{ url_for("index", _external=True) }}' + '?' + '{{ code }}'
             );
         });
+
+        // Vim cheatsheet toggle
+        document.querySelector('[data-cheatsheet]').addEventListener('click', () => {
+            document.getElementById('cheatsheet-overlay').classList.add('active');
+        });
+
+        document.getElementById('closeCheatsheet').addEventListener('click', () => {
+            document.getElementById('cheatsheet-overlay').classList.remove('active');
+        });
+
+        // To close when clicking outside the modal
+        document.getElementById('cheatsheet-overlay').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('cheatsheet-overlay')) {
+                document.getElementById('cheatsheet-overlay').classList.remove('active');
+            }
+        });
+    </script>
+    <script>
+        // Apply the selected car color and filter to the progress bar and car
+        const carColor = "{{ car_color }}";
+        const carFilter = "{{ car_filter }}";
+        const style = document.createElement('style');
+        style.textContent = `
+            progress::-webkit-progress-value {
+                background-color: ${carColor} !important;
+            }
+        `;
+        document.head.appendChild(style);
+        document.getElementById('race-car').style.filter = carFilter;
     </script>
 
 </body>
