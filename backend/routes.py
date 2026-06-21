@@ -23,7 +23,7 @@ def register_routes(app, db, bcrypt):
 
                     if bcrypt.check_password_hash(user.password, password):
                         login_user(user)
-                        return redirect(url_for('index')) #TODO: Check if this works, user should be authenticated so it goes to next page
+                        return redirect(url_for('index'))
                     else: return signin_failed() # Wrong password
 
                 elif clicked == 'signup':
@@ -32,7 +32,7 @@ def register_routes(app, db, bcrypt):
                     db.session.add(user)
                     db.session.commit()
                     login_user(user)
-                    return redirect(url_for('index')) #TODO: ditto
+                    return redirect(url_for('index'))
                 
         else: # User is authenticated (has signed in)
             if request.method == 'GET': 
@@ -73,7 +73,7 @@ def register_routes(app, db, bcrypt):
         
     def signin_failed():
         flash('Sign in failed. Please try again.')
-        return redirect(url_for('index')) #TODO: Check if the flash works! If it doesn't, try render_template
+        return redirect(url_for('index'))
 
     def room_exists(code):
         #TODO: Check if room code exists in database AND is open. Retuns True if it exists and is open.
