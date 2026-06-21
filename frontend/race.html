@@ -113,7 +113,7 @@
             if (progress >= 100) {
                 setTimeout(() => {
                     alert("You win!"); //TODO: make this look nicer
-                    location.href = '{{ url_for("choose_avatar") }}';
+                    location.href = '{{ url_for("index") }}';
                 }, 100);
             } else {
                 setTimeout(calcProgressLoop, 200);

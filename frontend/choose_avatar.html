@@ -30,7 +30,13 @@
         <h1 style="color: #00D4FF; margin-bottom: 20px;">Choose Your Ride</h1>
         <label style="color: #79838c; font-family: 'Barlow', sans-serif; display: block; text-align: center;">Racing
             as</label>
-        <h2>quickwltz</h2>
+        <h2>
+            {% if current_user.is_authenticated %}
+            {{ current_user.username }}
+            {% else %}
+            Guest 
+            {% endif %}
+        </h2>
 
         <div id="choose-avatar">
             <div id="avatars">
@@ -96,13 +102,13 @@
 
         <div id="action-buttons">
             <!-- Default colours set to white -->
-            <form action="{{ url_for('choose_avatar') }}" method="POST">
+            <form action="{{ url_for('index') }}" method="POST">
                 <input type="hidden" name="clicked" value="play">
                 <input type="hidden" name="car_color" id="car_color_input_play" value="#F5F0E8">
                 <input type="hidden" name="car_filter" id="car_filter_input_play" value="brightness(100)">
                 <button type="submit" id="btn-play">Play</button>
             </form>
-            <form action="{{ url_for('choose_avatar') }}" method="POST">
+            <form action="{{ url_for('index') }}" method="POST">
                 <input type="hidden" name="clicked" value="private">
                 <input type="hidden" name="car_color" id="car_color_input_private" value="#F5F0E8">
                 <input type="hidden" name="car_filter" id="car_filter_input_private" value="brightness(100)">

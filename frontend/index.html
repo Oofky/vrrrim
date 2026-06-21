@@ -22,6 +22,17 @@
 </head>
 
 <body>
+    <!-- Flashed messages (temporary messages), such as for login failed -->
+    {% with msgs = get_flashed_messages() %}
+        {% if msgs %}
+            <ul>
+            {% for msg in msgs %}
+                <li>{{ msg }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+    
     <div>
         <img src="assets/logos/logo.png" alt="vrrrim logo" class="logo" height="125px">
     </div>
@@ -32,14 +43,14 @@
             <a class="">Sign Up</a>
         </div>
         <div id="signin">
-            <form action="">
+            <form action="{{ url_for('index') }}" method="POST">
                 <div class="form-group">
                     <label for="username">Username</label>
-                    <input type="text" id="username" autofocus>
+                    <input type="text" name="username" id="username" autofocus>
                 </div>
                 <div class="form-group">
                     <label for="pass">Password</label>
-                    <input type="password" id="pass">
+                    <input type="password" name="password" id="pass">
                     <span id="showpwd" class="fa fa-eye-slash"></span>
                 </div>
                 <div class="form-group">
@@ -47,14 +58,11 @@
                         <input type="checkbox" checked><span class="text">Keep me signed in </span>
                     </label>
                 </div>
-            </form>
-
-            <div id="action-buttons">
-                <form action="{{ url_for('index') }}" method="POST">
-                    <input type="hidden" name="clicked" value="login">
+                <div id="action-buttons">
+                    <input type="hidden" name="clicked" value="login" id="hidden-val">
                     <button type="submit" id="btn-play">Login</button>
-                </form>
-            </div>
+                </div>
+            </form>
 
             <div class="hr"></div>
             <a href="#" id="froget-pass">Forget Password?</a>
@@ -93,6 +101,8 @@
 
                 // Change the button name to match the active tab
                 document.getElementById('btn-play').textContent = tab.textContent;
+                // Change the hidden value to match the active tab
+                document.getElementById('hidden-val').value = 'signup'
             });
         });
     </script>
