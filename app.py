@@ -9,10 +9,10 @@ import os
 db = SQLAlchemy()
 
 def create_app():
-    load_dotenv('../.env')
+    load_dotenv()
 
     # Flask
-    app = Flask(__name__, template_folder='../frontend', static_folder='../frontend', static_url_path='/')
+    app = Flask(__name__, template_folder='frontend', static_folder='frontend', static_url_path='/')
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
     app.secret_key = os.environ.get('FLASK_KEY')
 
