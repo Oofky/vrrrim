@@ -27,7 +27,7 @@ def register_routes(app, db, bcrypt, socketio):
                     else: return signin_failed() # Wrong password
 
                 elif clicked == 'signup':
-                    hashed_password = bcrypt.generate_password_hash(password)
+                    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
                     user = User(username=username, password=hashed_password) #TODO: Add email field, also possibly a confirm password field
                     db.session.add(user)
                     db.session.commit()
