@@ -19,14 +19,15 @@ def register_routes(app, db, bcrypt, socketio):
                     user = db.session.scalars(
                         select(User).where(User.username == username)).first()
 
-                    if not user: return signin_failed() # No such username
+                    if not user: return login_failed() # No such username
 
                     if bcrypt.check_password_hash(user.password, password):
                         login_user(user)
                         return redirect(url_for('index'))
-                    else: return signin_failed() # Wrong password
+                    else: return login_failed() # Wrong password
 
                 elif clicked == 'signup':
+                    if username_exists(username): return signup_failed()
                     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
                     user = User(username=username, password=hashed_password) #TODO: Add email field, also possibly a confirm password field
                     db.session.add(user)
@@ -74,9 +75,16 @@ def register_routes(app, db, bcrypt, socketio):
         logout_user()
         return redirect(url_for('index'))
         
-    def signin_failed():
-        flash('Sign in failed. Please try again.')
+    def login_failed():
+        flash('Your username or password is incorrect. Please try again.')
         return redirect(url_for('index'))
+    
+    def signup_failed():
+        flash('Your username is taken. Please try another username.')
+        return redirect(url_for('index'))
+    
+    def username_exists(name):
+        return bool(db.session.scalars(select(User).where(User.username == name)).first())
 
     def room_joinable(code): # Returns True if room code exists in db AND is open
         return bool(db.session.scalars(select(Room).where(Room.code == code, Room.accessible == True)).first())
