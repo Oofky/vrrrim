@@ -4,7 +4,7 @@ from sqlalchemy import select
 import random, string
 from models import User
 
-def register_routes(app, db, bcrypt):
+def register_routes(app, db, bcrypt, socketio):
     @app.route('/', methods=['GET', 'POST'])
     def index():
         if not current_user.is_authenticated:
