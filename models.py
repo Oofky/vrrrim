@@ -9,3 +9,10 @@ class User(db.Model, UserMixin):
 
     def get_id(self):
         return self.uid
+    
+class Room(db.Model):
+    __tablename__ = 'room'
+    code = db.Column(db.String, primary_key=True)
+    public = db.Column(db.Boolean, nullable=False)
+    accessible = db.Column(db.Boolean, nullable=False)
+    num_of_plrs = db.Column(db.Integer, nullable=False)

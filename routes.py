@@ -1,8 +1,8 @@
 from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_user, logout_user
-from sqlalchemy import select
+from sqlalchemy import select, update
 import random, string
-from models import User
+from models import Room, User
 
 def register_routes(app, db, bcrypt, socketio):
     @app.route('/', methods=['GET', 'POST'])
@@ -38,7 +38,7 @@ def register_routes(app, db, bcrypt, socketio):
             if request.method == 'GET': 
                 if len(request.args) > 0: # Joining private room / Invalid room code
                     room_code = next(iter(request.args)) # Get first parameter
-                    if room_exists(room_code):
+                    if room_joinable(room_code):
                         session['code'] = room_code
                         return render_template('choose_avatar.html')
                     
@@ -56,6 +56,9 @@ def register_routes(app, db, bcrypt, socketio):
                     if not room_code: # Join a public room
                         room_code = find_room()
                         session['code'] = room_code
+                    else:
+                        incr_num_of_plrs(room_code)
+
                     return render_template('race.html', code=session['code'], car_color=car_color, car_filter=car_filter)
                 
                 elif clicked == 'private':
@@ -75,14 +78,48 @@ def register_routes(app, db, bcrypt, socketio):
         flash('Sign in failed. Please try again.')
         return redirect(url_for('index'))
 
-    def room_exists(code):
-        #TODO: Check if room code exists in database AND is open. Retuns True if it exists and is open.
-        return True
+    def room_joinable(code): # Returns True if room code exists in db AND is open
+        return bool(db.session.scalars(select(Room).where(Room.code == code, Room.accessible == True)).first())
 
     def find_room():
-        #TODO: Find a public AND open room code in database. If none available, generate new code and add to db as public room.
-        return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+        open_code = ''
+
+        # Find a public AND open room code in db
+        open_room = db.session.scalars(select(Room).where(Room.public == True, Room.accessible == True)).first()
+
+        if not open_room: # If none available
+            open_code = generate_unique_code()
+
+            # Add open_code to db as public room
+            room = Room(code=open_code, public=True, accessible=True, num_of_plrs=1)
+            db.session.add(room)
+            db.session.commit()
+        else:
+            open_code = open_room.code
+            incr_num_of_plrs(open_code)
+
+        return open_code
 
     def generate_private_room():
-        #TODO: Generate new code and add to database as private room.
-        return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+        #TODO: remember to remove rooms from db, also update accessibility
+        new_code = generate_unique_code()
+
+        # Add new_code to db as private room
+        room = Room(code=new_code, public=False, accessible=True, num_of_plrs=1)
+        db.session.add(room)
+        db.session.commit()
+
+        return new_code
+    
+    def generate_unique_code():
+        new_code = ''.join(random.choices(string.ascii_letters + string.digits, k=8)) # Generate new code
+
+        # Make sure new code does not already exist in db
+        while db.session.scalars(select(Room).where(Room.code == new_code)).first():
+            new_code = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+
+        return new_code
+    
+    def incr_num_of_plrs(code):
+        db.session.execute(update(Room).where(Room.code == code).values(num_of_plrs=Room.num_of_plrs + 1))
+        db.session.commit()
