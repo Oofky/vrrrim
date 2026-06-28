@@ -195,6 +195,10 @@ def register_routes(app, db, bcrypt, socketio):
             'bars_data': get_bars_data(room), 
             'leader_id': leader_id
             }, to=room_code)
+        
+    @socketio.on('start_game')
+    def start_all_games():
+        emit('start_game', to=session['code'])
 
     def get_bars_data(room):
         plrs = room.plrs

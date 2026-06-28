@@ -71,37 +71,16 @@
             parent: document.getElementById("code-mirror-editor")
         })
 
-        const startButton = document.getElementById('startButton');
-        startButton.addEventListener('click', () => {
-            // Disable the button so player cannot click it multiple times
-            startButton.disabled = true;
+        window.set_left_editor_editable = () => { // So the socketIO script below can use it
+            view.a.dispatch({
+                effects: [
+                    editableComp.reconfigure(EditorView.editable.of(true)),
+                    readOnlyComp.reconfigure(EditorState.readOnly.of(false))
+                ]
+            });
+        };
 
-            // Countdown 3s
-            const wait = (time) => new Promise(resolve => setTimeout(resolve, time));
-            startButton.textContent = '3...';
-            wait(1000).then(() => {
-                startButton.textContent = '2...';
-                return (wait(1000));
-            }).then(() => {
-                startButton.textContent = '1...';
-                return (wait(1000));
-            }).then(() => {
-                startButton.textContent = 'GO!';
-
-                // Set left editor to be editable by player
-                view.a.dispatch({
-                    effects: [
-                        editableComp.reconfigure(EditorView.editable.of(true)),
-                        readOnlyComp.reconfigure(EditorState.readOnly.of(false))
-                    ]
-                });
-
-                // Start calculating progress
-                calcProgressLoop();
-            })
-        });
-
-        function calcProgressLoop() {
+        window.calc_progress_loop = () => { // So the socketIO script below can use it
             const diffs = dmp.diff_main(view.a.state.doc.toString(), result_doc);
             const dist = dmp.diff_levenshtein(diffs);
             const progress = Math.max(0, Math.floor((maxDist - dist) / maxDist * 100));
@@ -116,7 +95,7 @@
                     location.href = '{{ url_for("index") }}';
                 }, 100);
             } else {
-                setTimeout(calcProgressLoop, 200);
+                setTimeout(calc_progress_loop, 200);
             }
         }
     </script>
@@ -257,11 +236,11 @@
         var socketio = io();
 
         const progress_div = document.getElementById("progress-wrapper");
-        const create_bar = (bar_id, id, username, filter) => {
+        const create_bar = (bar_id, car_id, username, filter) => {
             return `
                 <label for="${bar_id}" style="color: #79838c; font-family: 'Barlow', sans-serif;">${username}</label>
                 <div class="progress-track">
-                    <img src="assets/logos/avatar.png" id="race-car${id}" class="race-car" style="filter: ${filter}"> 
+                    <img src="assets/logos/avatar.png" id="${car_id}" class="race-car" style="filter: ${filter}"> 
                     <progress id="${bar_id}" value="0" max="100"></progress>
                 </div>`;
         }
@@ -280,17 +259,19 @@
             }
 
             for (const plr of bars_data) {
-                // Set bar id to have an index after it IF it is not this player's bar
+                // Set bar and car id to have an index after it IF it is not this player's bar
                 let bar_id = 'progressBar';
+                let car_id = 'race-car';
                 if (my_id != plr.id) {
                     bar_id += plr.id;
+                    car_id += plr.id;
                 }
                 // Set bar label to include the leader tag
                 let bar_label = plr.username;
                 if (leader_id == plr.id) {
                     bar_label += ' (Leader)';
                 }
-                total_html += create_bar(bar_id, plr.id, bar_label, plr.car_filter);
+                total_html += create_bar(bar_id, car_id, bar_label, plr.car_filter);
 
                 
                 total_style += `
@@ -316,6 +297,34 @@
                 startButton.disabled = true;
             }
         })
+
+        // Fire event to tell all players to start
+        const startButton = document.getElementById('startButton');
+        startButton.addEventListener('click', () => socketio.emit('start_game'));
+
+        // Detect event to start
+        socketio.on('start_game', () => {
+            // Disable the button so player cannot click it multiple times
+            startButton.disabled = true;
+
+            // Countdown 3s
+            const wait = (time) => new Promise(resolve => setTimeout(resolve, time));
+            startButton.textContent = '3...';
+            wait(1000).then(() => {
+                startButton.textContent = '2...';
+                return (wait(1000));
+            }).then(() => {
+                startButton.textContent = '1...';
+                return (wait(1000));
+            }).then(() => {
+                startButton.textContent = 'GO!';
+                window.set_left_editor_editable();
+
+                // Start calculating progress
+                window.calc_progress_loop();
+            })
+        })
+
     </script>
 </body>
 
