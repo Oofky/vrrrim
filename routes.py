@@ -1,6 +1,6 @@
 from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_user, logout_user
-from flask_socketio import join_room, leave_room, send
+from flask_socketio import emit, join_room, leave_room
 from sqlalchemy import delete, select, update
 import random, string
 from models import Room, User
@@ -158,8 +158,7 @@ def register_routes(app, db, bcrypt, socketio):
             db.session.execute(update(Room).where(Room.code == room_code).values(accessible=False))
             db.session.commit()
 
-        send({
-            'event': 'join',
+        emit('join', {
             'username': current_user.username,
             'car_color': session['car_color'],
             'car_filter': session['car_filter']
@@ -180,8 +179,5 @@ def register_routes(app, db, bcrypt, socketio):
             db.session.execute(update(Room).where(Room.code == room_code).values(accessible=True))
             db.session.commit()
 
-        send({
-            'event': 'leave',
-            'username': current_user.username
-            }, to=room_code)
+        emit('leave', {'username': current_user.username}, to=room_code)
 

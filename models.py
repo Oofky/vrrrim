@@ -16,3 +16,12 @@ class Room(db.Model):
     public = db.Column(db.Boolean, nullable=False)
     accessible = db.Column(db.Boolean, nullable=False)
     num_of_plrs = db.Column(db.Integer, nullable=False)
+    plrs = db.relationship('PlayerInRoom', backref='room_obj')
+
+class PlayerInRoom(db.Model):
+    __tablename__ = 'player_in_room'
+    id = db.Column(db.Integer, primary_key=True)
+    room_code = db.Column(db.String, db.ForeignKey('room.code'))
+    username = db.Column(db.String, nullable=False)
+    car_color = db.Column(db.String, nullable=False)
+    car_filter = db.Column(db.String, nullable=False)
