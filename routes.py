@@ -1,7 +1,7 @@
 from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_user, logout_user
 from flask_socketio import join_room, leave_room, send
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 import random, string
 from models import Room, User
 
@@ -116,7 +116,6 @@ def register_routes(app, db, bcrypt, socketio):
         return open_code
 
     def generate_private_room():
-        #TODO: remember to remove rooms from db, also update accessibility
         new_code = generate_unique_code()
 
         # Add new_code to db as private room
@@ -137,6 +136,10 @@ def register_routes(app, db, bcrypt, socketio):
     
     def incr_num_of_plrs(code):
         db.session.execute(update(Room).where(Room.code == code).values(num_of_plrs=Room.num_of_plrs + 1))
+        db.session.commit()
+
+    def decr_num_of_plrs(code):
+        db.session.execute(update(Room).where(Room.code == code).values(num_of_plrs=Room.num_of_plrs - 1))
         db.session.commit()
 
     def clear_session_data():
@@ -160,5 +163,25 @@ def register_routes(app, db, bcrypt, socketio):
             'username': current_user.username,
             'car_color': session['car_color'],
             'car_filter': session['car_filter']
+            }, to=room_code)
+        
+    @socketio.on('disconnect')
+    def disconnect(reason):
+        room_code = session['code']
+        leave_room(room_code)
+        decr_num_of_plrs(room_code)
+
+        # Close room
+        if db.session.scalars(select(Room).where(Room.code == room_code)).first().num_of_plrs <= 0:
+            db.session.execute(delete(Room).where(Room.code == room_code))
+            db.session.commit()
+        elif not db.session.scalars(select(Room).where(Room.code == room_code)).first().accessible:
+            # Reopen the room
+            db.session.execute(update(Room).where(Room.code == room_code).values(accessible=True))
+            db.session.commit()
+
+        send({
+            'event': 'leave',
+            'username': current_user.username
             }, to=room_code)
 
