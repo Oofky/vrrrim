@@ -120,37 +120,6 @@
             }
         }
     </script>
-
-    <!-- SocketIO -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
-    <script type="text/javascript">
-        var socketio = io();
-
-        const progress_div = document.getElementById("progress-wrapper");
-        const create_bar = (username, car_color, car_filter) => {
-            const content = `
-            <label for="progressBar" style="color: #79838c; font-family: 'Barlow', sans-serif;">Your progress: </label>
-            <div id="progress-track">
-                <img src="assets/logos/avatar.png" id="race-car"> 
-                <progress id="progressBar" value="0" max="100"></progress>
-            </div>`
-        }
-
-        socketio.on('join', (data) => {
-
-        })
-
-        socketio.on('leave', (data) => {
-
-        })
-
-        const sendMessage = () => {
-            console.log("send");
-        }
-        // socket.on('connect', function() {
-        //     socket.emit('my event', {data: 'I\'m connected!'});
-        // });
-    </script>
 </head>
 
 <body>
@@ -207,11 +176,6 @@
     </div>
 
     <div id="progress-wrapper" style="padding: 0px 32px; margin-top: 16px">
-        <label for="progressBar" style="color: #79838c; font-family: 'Barlow', sans-serif;">Your progress: </label>
-        <div id="progress-track">
-            <img src="assets/logos/avatar.png" id="race-car"> 
-            <progress id="progressBar" value="0" max="100"></progress>
-        </div>
     </div>
 
     <!-- Cheatsheet overlay -->
@@ -286,20 +250,50 @@
             }
         });
     </script>
-    <script>
-        // Apply the selected car color and filter to the progress bar and car
-        const carColor = "{{ car_color }}";
-        const carFilter = "{{ car_filter }}";
-        const style = document.createElement('style');
-        style.textContent = `
-            progress::-webkit-progress-value {
-                background-color: ${carColor} !important;
-            }
-        `;
-        document.head.appendChild(style);
-        document.getElementById('race-car').style.filter = carFilter;
-    </script>
+    
+    <!-- SocketIO -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        var socketio = io();
 
+        const progress_div = document.getElementById("progress-wrapper");
+        const create_bar = (bar_id, id, username, filter) => {
+            return `
+                <label for="${bar_id}" style="color: #79838c; font-family: 'Barlow', sans-serif;">${username}</label>
+                <div class="progress-track">
+                    <img src="assets/logos/avatar.png" id="race-car${id}" class="race-car" style="filter: ${filter}"> 
+                    <progress id="${bar_id}" value="0" max="100"></progress>
+                </div>`;
+        }
+
+        socketio.on('players_bars', (data) => {
+            const bars_data = data.bars_data;
+            const my_id = data.my_id;
+            let total_html = '';
+            let total_style = '';
+
+            for (const plr of bars_data) {
+                let bar_id = 'progressBar';
+                if (my_id != plr.id) {
+                    bar_id += plr.id;
+                }
+                total_html += create_bar(bar_id, plr.id, plr.username, plr.car_filter);
+
+                
+                total_style += `
+                    progress#${bar_id}::-webkit-progress-value {
+                        background-color: ${plr.car_color} !important;
+                    }
+                `;
+            }
+
+            progress_div.innerHTML = total_html;
+            // Apply the selected car color and filter to the progress bar and car
+            const style = document.createElement('style');
+            style.textContent = total_style;
+            document.head.appendChild(style);
+        })
+    </script>
 </body>
 
 </html>

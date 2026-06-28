@@ -62,17 +62,11 @@ def register_routes(app, db, bcrypt, socketio):
                         room_code = find_room()
                         session['code'] = room_code
 
-                    return render_template('race.html', 
-                                           code=session['code'], 
-                                           car_color=session['car_color'], 
-                                           car_filter=session['car_filter'])
+                    return render_template('race.html', code=session['code'])
                 
                 elif clicked == 'private':
                     session['code'] = generate_private_room()
-                    return render_template('race.html', 
-                                           code=session['code'], 
-                                           car_color=session['car_color'], 
-                                           car_filter=session['car_filter'])
+                    return render_template('race.html', code=session['code'])
                 
                 # Else if invalid POST request, return index page
                 clear_session_data()
@@ -129,7 +123,7 @@ def register_routes(app, db, bcrypt, socketio):
         new_code = ''.join(random.choices(string.ascii_letters + string.digits, k=8)) # Generate new code
 
         # Make sure new code does not already exist in db
-        while db.session.scalars(select(Room).where(Room.code == new_code)).first():
+        while db.session.get(Room, new_code):
             new_code = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
 
         return new_code
@@ -162,7 +156,7 @@ def register_routes(app, db, bcrypt, socketio):
         join_room(room_code)
         add_this_player(room_code)
 
-        room = db.session.scalars(select(Room).where(Room.code == room_code)).first()
+        room = db.session.get(Room, room_code)
 
         # Room size limit
         if len(room.plrs) >= 5:
@@ -170,7 +164,7 @@ def register_routes(app, db, bcrypt, socketio):
             room.accessible = False
             db.session.commit()
 
-        emit('join', {}, to=room_code)
+        emit('players_bars', {'bars_data': get_bars_data(room), 'my_id': session['plr_id']}, to=room_code)
         
     @socketio.on('disconnect')
     def disconnect(reason):
@@ -178,7 +172,7 @@ def register_routes(app, db, bcrypt, socketio):
         leave_room(room_code)
         delete_this_player()
 
-        room = db.session.scalars(select(Room).where(Room.code == room_code)).first()
+        room = db.session.get(Room, room_code)
 
         # Close room
         if len(room.plrs) == 0:
@@ -189,5 +183,16 @@ def register_routes(app, db, bcrypt, socketio):
             room.accessible = True
             db.session.commit()
 
-        emit('leave', {}, to=room_code)
+        emit('players_bars', {'bars_data': get_bars_data(room), 'my_id': 'nothing'}, to=room_code)
 
+    def get_bars_data(room):
+        plrs = room.plrs
+        list_of_dicts = []
+        for plr in plrs:
+            list_of_dicts.append({
+                'id': plr.id,
+                'username': plr.username,
+                'car_color': plr.car_color,
+                'car_filter': plr.car_filter
+            })
+        return list_of_dicts
