@@ -1,16 +1,20 @@
+from dotenv import load_dotenv
 from flask import Flask
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+import os
 
 db = SQLAlchemy()
 
 def create_app():
+    load_dotenv()
+
     # Flask
-    app = Flask(__name__, template_folder='../frontend', static_folder='../frontend', static_url_path='/')
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///./database.db'
-    app.secret_key = 'temporary' #TODO: Change to be secure
+    app = Flask(__name__, template_folder='frontend', static_folder='frontend', static_url_path='/')
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+    app.secret_key = os.environ.get('FLASK_KEY')
 
     # Database
     db.init_app(app)
