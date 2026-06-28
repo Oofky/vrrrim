@@ -158,7 +158,7 @@ def register_routes(app, db, bcrypt, socketio):
         add_this_player(room_code)
 
         room = db.session.get(Room, room_code)
-        leader_id = db.session.scalars(select(func.min(PlayerInRoom.id))).first()
+        leader_id = db.session.scalar(select(func.min(PlayerInRoom.id)).where(PlayerInRoom.room_code == room_code))
 
         # Room size limit
         if len(room.plrs) >= 5:
@@ -189,7 +189,7 @@ def register_routes(app, db, bcrypt, socketio):
                 # Reopen the room
                 room.accessible = True
                 db.session.commit()
-            leader_id = db.session.scalars(select(func.min(PlayerInRoom.id))).first()
+            leader_id = db.session.scalar(select(func.min(PlayerInRoom.id)).where(PlayerInRoom.room_code == room_code))
 
         emit('players_bars', {
             'bars_data': get_bars_data(room), 
