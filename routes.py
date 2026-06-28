@@ -196,9 +196,34 @@ def register_routes(app, db, bcrypt, socketio):
             'leader_id': leader_id
             }, to=room_code)
         
+    game_progress = {}
+    
     @socketio.on('start_game')
     def start_all_games():
+        game_progress[session['code']] = {}
         emit('start_game', to=session['code'])
+        socketio.start_background_task(game_loop, session['code'])
+
+    @socketio.on('update_bar')
+    def update_progress(data):
+        id = data[0]
+        progress = data[1]
+
+        if progress >= 100:
+            game_progress[session['code']]['winner'] = current_user.username
+        game_progress[session['code']][id] = progress
+
+    def game_loop(room_code):
+        while room_code in game_progress:
+            socketio.emit('update_bar', game_progress[room_code], to=room_code)
+            print(game_progress[room_code])
+
+            if game_progress[room_code].get('winner'):
+                socketio.emit('winner', game_progress[room_code].get('winner'), to=room_code)
+                game_progress.pop(room_code)
+                break
+
+            socketio.sleep(0.2)
 
     def get_bars_data(room):
         plrs = room.plrs

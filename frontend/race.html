@@ -80,23 +80,14 @@
             });
         };
 
-        window.calc_progress_loop = () => { // So the socketIO script below can use it
+        window.calc_progress_loop = (id) => { // So the socketIO script below can use it
             const diffs = dmp.diff_main(view.a.state.doc.toString(), result_doc);
             const dist = dmp.diff_levenshtein(diffs);
             const progress = Math.max(0, Math.floor((maxDist - dist) / maxDist * 100));
+ 
+            window.fire_progress(id, progress);
 
-            document.getElementById('progressBar').value = progress;
-            document.getElementById('race-car').style.left = `${progress}%`; 
-            //TODO: Should send this data to server as well, so server can send to other players
-
-            if (progress >= 100) {
-                setTimeout(() => {
-                    alert("You win!"); //TODO: make this look nicer
-                    location.href = '{{ url_for("index") }}';
-                }, 100);
-            } else {
-                setTimeout(calc_progress_loop, 200);
-            }
+            setTimeout(calc_progress_loop, 200, id);
         }
     </script>
 </head>
@@ -236,14 +227,17 @@
         var socketio = io();
 
         const progress_div = document.getElementById("progress-wrapper");
-        const create_bar = (bar_id, car_id, username, filter) => {
+        const startButton = document.getElementById('startButton');
+        const create_bar = (id, username, filter) => {
             return `
-                <label for="${bar_id}" style="color: #79838c; font-family: 'Barlow', sans-serif;">${username}</label>
+                <label for="progressBar${id}" style="color: #79838c; font-family: 'Barlow', sans-serif;">${username}</label>
                 <div class="progress-track">
-                    <img src="assets/logos/avatar.png" id="${car_id}" class="race-car" style="filter: ${filter}"> 
-                    <progress id="${bar_id}" value="0" max="100"></progress>
+                    <img src="assets/logos/avatar.png" id="race-car${id}" class="race-car" style="filter: ${filter}"> 
+                    <progress id="progressBar${id}" value="0" max="100"></progress>
                 </div>`;
         }
+        window.fire_progress = (id, progress) => socketio.emit('update_bar', [id, progress]); // So the code mirror script above can use it
+        let my_id = null;
 
         socketio.on('players_bars', (data) => {
             const bars_data = data.bars_data;
@@ -251,7 +245,6 @@
             let total_html = '';
             let total_style = '';
 
-            my_id = null;
             for (const plr of bars_data) {
                 if (plr.username == '{{username}}') {
                     my_id = plr.id;
@@ -259,23 +252,15 @@
             }
 
             for (const plr of bars_data) {
-                // Set bar and car id to have an index after it IF it is not this player's bar
-                let bar_id = 'progressBar';
-                let car_id = 'race-car';
-                if (my_id != plr.id) {
-                    bar_id += plr.id;
-                    car_id += plr.id;
-                }
                 // Set bar label to include the leader tag
                 let bar_label = plr.username;
                 if (leader_id == plr.id) {
                     bar_label += ' (Leader)';
                 }
-                total_html += create_bar(bar_id, car_id, bar_label, plr.car_filter);
-
+                total_html += create_bar(plr.id, bar_label, plr.car_filter);
                 
                 total_style += `
-                    progress#${bar_id}::-webkit-progress-value {
+                    progress#progressBar${plr.id}::-webkit-progress-value {
                         background-color: ${plr.car_color} !important;
                     }
                 `;
@@ -288,7 +273,6 @@
             document.head.appendChild(style);
 
             // Change the start button according the leader status
-            const start_button = document.getElementById('startButton');
             if (my_id == leader_id) {
                 startButton.innerHTML = '▶ Start';
                 startButton.disabled = false;
@@ -299,7 +283,6 @@
         })
 
         // Fire event to tell all players to start
-        const startButton = document.getElementById('startButton');
         startButton.addEventListener('click', () => socketio.emit('start_game'));
 
         // Detect event to start
@@ -321,10 +304,25 @@
                 window.set_left_editor_editable();
 
                 // Start calculating progress
-                window.calc_progress_loop();
+                window.calc_progress_loop(my_id);
             })
         })
 
+        socketio.on('update_bar', (data) => {
+            for (const id in data) {
+                const progress = data[id];
+                const bar = document.getElementById('progressBar' + id)
+                const car = document.getElementById('race-car' + id)
+
+                bar.value = progress;
+                car.style.left = `${progress}%`;
+            }
+        })
+
+        socketio.on('winner', (winner) => {
+            alert(winner + ' wins!'); //TODO: make this look nicer
+            location.href = '{{ url_for("index") }}';
+        })
     </script>
 </body>
 
