@@ -1,7 +1,7 @@
 from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_user, logout_user
 from flask_socketio import emit, join_room, leave_room
-from sqlalchemy import delete, select, update
+from sqlalchemy import func, select
 import random, string
 from models import PlayerInRoom, Room, User
 
@@ -151,12 +151,13 @@ def register_routes(app, db, bcrypt, socketio):
         session.pop('car_filter', None)
 
     @socketio.on('connect')
-    def connect(auth):
+    def connect(auth=None):
         room_code = session['code']
         join_room(room_code)
         add_this_player(room_code)
 
         room = db.session.get(Room, room_code)
+        leader_id = db.session.scalars(select(func.min(PlayerInRoom.id))).first()
 
         # Room size limit
         if len(room.plrs) >= 5:
@@ -164,26 +165,37 @@ def register_routes(app, db, bcrypt, socketio):
             room.accessible = False
             db.session.commit()
 
-        emit('players_bars', {'bars_data': get_bars_data(room), 'my_id': session['plr_id']}, to=room_code)
+        emit('players_bars', {
+            'bars_data': get_bars_data(room), 
+            'my_id': session['plr_id'],
+            'leader_id': leader_id
+            }, to=room_code)
         
     @socketio.on('disconnect')
-    def disconnect(reason):
+    def disconnect(reason=None):
         room_code = session['code']
         leave_room(room_code)
         delete_this_player()
 
         room = db.session.get(Room, room_code)
+        leader_id = None
 
         # Close room
         if len(room.plrs) == 0:
             db.session.delete(room)
             db.session.commit()
-        elif not room.accessible:
-            # Reopen the room
-            room.accessible = True
-            db.session.commit()
+        else:
+            if not room.accessible:
+                # Reopen the room
+                room.accessible = True
+                db.session.commit()
+            leader_id = db.session.scalars(select(func.min(PlayerInRoom.id))).first()
 
-        emit('players_bars', {'bars_data': get_bars_data(room), 'my_id': 'nothing'}, to=room_code)
+        emit('players_bars', {
+            'bars_data': get_bars_data(room), 
+            'my_id': 'nothing',
+            'leader_id': leader_id
+            }, to=room_code)
 
     def get_bars_data(room):
         plrs = room.plrs

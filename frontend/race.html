@@ -250,7 +250,7 @@
             }
         });
     </script>
-    
+
     <!-- SocketIO -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
     <script type="text/javascript">
@@ -269,15 +269,22 @@
         socketio.on('players_bars', (data) => {
             const bars_data = data.bars_data;
             const my_id = data.my_id;
+            const leader_id = data.leader_id
             let total_html = '';
             let total_style = '';
 
             for (const plr of bars_data) {
+                // Set bar id to have an index after it IF it is not this player's bar
                 let bar_id = 'progressBar';
                 if (my_id != plr.id) {
                     bar_id += plr.id;
                 }
-                total_html += create_bar(bar_id, plr.id, plr.username, plr.car_filter);
+                // Set bar label to include the leader tag
+                let bar_label = plr.username
+                if (leader_id == plr.id) {
+                    bar_label += ' (Leader)'
+                }
+                total_html += create_bar(bar_id, plr.id, bar_label, plr.car_filter);
 
                 
                 total_style += `
