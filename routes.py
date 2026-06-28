@@ -38,6 +38,9 @@ def register_routes(app, db, bcrypt, socketio):
                 
         else: # User is authenticated (has signed in)
             if request.method == 'GET': 
+                if (db.session.scalars(select(PlayerInRoom).where(PlayerInRoom.username == current_user.username)).first()):
+                    return 'You are already in a game in another tab. Try using an incognito tab and using a different account.'
+
                 if len(request.args) > 0: # Joining private room / Invalid room code
                     room_code = next(iter(request.args)) # Get first parameter
                     if room_joinable(room_code):
@@ -62,11 +65,11 @@ def register_routes(app, db, bcrypt, socketio):
                         room_code = find_room()
                         session['code'] = room_code
 
-                    return render_template('race.html', code=session['code'])
+                    return render_template('race.html', code=session['code'], username=current_user.username)
                 
                 elif clicked == 'private':
                     session['code'] = generate_private_room()
-                    return render_template('race.html', code=session['code'])
+                    return render_template('race.html', code=session['code'], username=current_user.username)
                 
                 # Else if invalid POST request, return index page
                 clear_session_data()
@@ -137,13 +140,11 @@ def register_routes(app, db, bcrypt, socketio):
         )
         db.session.add(plr)
         db.session.commit()
-        session['plr_id'] = plr.id
 
     def delete_this_player():
-        plr = db.session.get(PlayerInRoom, session['plr_id'])
+        plr = db.session.scalars(select(PlayerInRoom).where(PlayerInRoom.username == current_user.username)).first()
         db.session.delete(plr)
         db.session.commit()
-        session.pop('plr_id', None)
 
     def clear_session_data():
         session.pop('code', None)
@@ -167,7 +168,6 @@ def register_routes(app, db, bcrypt, socketio):
 
         emit('players_bars', {
             'bars_data': get_bars_data(room), 
-            'my_id': session['plr_id'],
             'leader_id': leader_id
             }, to=room_code)
         
@@ -193,7 +193,6 @@ def register_routes(app, db, bcrypt, socketio):
 
         emit('players_bars', {
             'bars_data': get_bars_data(room), 
-            'my_id': 'nothing',
             'leader_id': leader_id
             }, to=room_code)
 

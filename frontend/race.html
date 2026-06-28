@@ -268,10 +268,16 @@
 
         socketio.on('players_bars', (data) => {
             const bars_data = data.bars_data;
-            const my_id = data.my_id;
-            const leader_id = data.leader_id
+            const leader_id = data.leader_id;
             let total_html = '';
             let total_style = '';
+
+            my_id = null;
+            for (const plr of bars_data) {
+                if (plr.username == '{{username}}') {
+                    my_id = plr.id;
+                }
+            }
 
             for (const plr of bars_data) {
                 // Set bar id to have an index after it IF it is not this player's bar
@@ -280,9 +286,9 @@
                     bar_id += plr.id;
                 }
                 // Set bar label to include the leader tag
-                let bar_label = plr.username
+                let bar_label = plr.username;
                 if (leader_id == plr.id) {
-                    bar_label += ' (Leader)'
+                    bar_label += ' (Leader)';
                 }
                 total_html += create_bar(bar_id, plr.id, bar_label, plr.car_filter);
 
@@ -299,6 +305,16 @@
             const style = document.createElement('style');
             style.textContent = total_style;
             document.head.appendChild(style);
+
+            // Change the start button according the leader status
+            const start_button = document.getElementById('startButton');
+            if (my_id == leader_id) {
+                startButton.innerHTML = '▶ Start';
+                startButton.disabled = false;
+            } else {
+                startButton.innerHTML = 'Wait for leader to start...';
+                startButton.disabled = true;
+            }
         })
     </script>
 </body>
