@@ -3,10 +3,12 @@ from flask import Flask
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from flask_migrate import Migrate
+from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 import os
 
 db = SQLAlchemy()
+socketio = SocketIO()
 
 def create_app():
     load_dotenv()
@@ -30,9 +32,12 @@ def create_app():
     # Hashing passwords
     bcrypt = Bcrypt(app)
 
+    # SocketIO
+    socketio.init_app(app, cors_allowed_origins=['http://localhost:5500', 'https://vrrrim.onrender.com'])
+
     # Register Flask routes
     from routes import register_routes
-    register_routes(app, db, bcrypt)
+    register_routes(app, db, bcrypt, socketio)
 
     # Migrate for modifying database
     migrate = Migrate(app, db)

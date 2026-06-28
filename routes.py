@@ -1,10 +1,11 @@
 from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_user, logout_user
-from sqlalchemy import select
+from flask_socketio import emit, join_room, leave_room
+from sqlalchemy import func, select
 import random, string
-from models import User
+from models import PlayerInRoom, Room, User
 
-def register_routes(app, db, bcrypt):
+def register_routes(app, db, bcrypt, socketio):
     @app.route('/', methods=['GET', 'POST'])
     def index():
         if not current_user.is_authenticated:
@@ -19,14 +20,15 @@ def register_routes(app, db, bcrypt):
                     user = db.session.scalars(
                         select(User).where(User.username == username)).first()
 
-                    if not user: return signin_failed() # No such username
+                    if not user: return login_failed() # No such username
 
                     if bcrypt.check_password_hash(user.password, password):
                         login_user(user)
                         return redirect(url_for('index'))
-                    else: return signin_failed() # Wrong password
+                    else: return login_failed() # Wrong password
 
                 elif clicked == 'signup':
+                    if username_exists(username): return signup_failed()
                     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
                     user = User(username=username, password=hashed_password) #TODO: Add email field, also possibly a confirm password field
                     db.session.add(user)
@@ -36,14 +38,17 @@ def register_routes(app, db, bcrypt):
                 
         else: # User is authenticated (has signed in)
             if request.method == 'GET': 
+                if (db.session.scalars(select(PlayerInRoom).where(PlayerInRoom.username == current_user.username)).first()):
+                    return 'You are already in a game in another tab. Try using an incognito tab and using a different account.'
+
                 if len(request.args) > 0: # Joining private room / Invalid room code
                     room_code = next(iter(request.args)) # Get first parameter
-                    if room_exists(room_code):
+                    if room_joinable(room_code):
                         session['code'] = room_code
                         return render_template('choose_avatar.html')
                     
                 # Else if no arg or invalid room code, access index page witout setting room code
-                session.pop('code', None)
+                clear_session_data()
                 return render_template('choose_avatar.html')
             
             elif request.method == 'POST': # Player clicked 'Play' or 'Create private room' or invalid POST request
@@ -51,19 +56,23 @@ def register_routes(app, db, bcrypt):
                 car_color = request.form.get('car_color')
                 car_filter = request.form.get('car_filter')
 
+                session['car_color'] = car_color
+                session['car_filter'] = car_filter
+
                 if clicked == 'play':
                     room_code = session.get('code')
                     if not room_code: # Join a public room
                         room_code = find_room()
                         session['code'] = room_code
-                    return render_template('race.html', code=session['code'], car_color=car_color, car_filter=car_filter)
+
+                    return render_template('race.html', code=session['code'], username=current_user.username)
                 
                 elif clicked == 'private':
                     session['code'] = generate_private_room()
-                    return render_template('race.html', code=session['code'], car_color=car_color, car_filter=car_filter)
+                    return render_template('race.html', code=session['code'], username=current_user.username)
                 
                 # Else if invalid POST request, return index page
-                session.pop('code', None)
+                clear_session_data()
                 return redirect(url_for('index'))
             
     @app.route('/logout') #TODO: Add a logout button somewhere
@@ -71,18 +80,159 @@ def register_routes(app, db, bcrypt):
         logout_user()
         return redirect(url_for('index'))
         
-    def signin_failed():
-        flash('Sign in failed. Please try again.')
+    def login_failed():
+        flash('Your username or password is incorrect. Please try again.')
         return redirect(url_for('index'))
+    
+    def signup_failed():
+        flash('Your username is taken. Please try another username.')
+        return redirect(url_for('index'))
+    
+    def username_exists(name):
+        return bool(db.session.scalars(select(User).where(User.username == name)).first())
 
-    def room_exists(code):
-        #TODO: Check if room code exists in database AND is open. Retuns True if it exists and is open.
-        return True
+    def room_joinable(code): # Returns True if room code exists in db AND is open
+        return bool(db.session.scalars(select(Room).where(Room.code == code, Room.accessible == True)).first())
 
     def find_room():
-        #TODO: Find a public AND open room code in database. If none available, generate new code and add to db as public room.
-        return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+        open_code = ''
+
+        # Find a public AND open room code in db
+        open_room = db.session.scalars(select(Room).where(Room.public == True, Room.accessible == True)).first()
+
+        if not open_room: # If none available
+            open_code = generate_unique_code()
+
+            # Add open_code to db as public room
+            room = Room(code=open_code, public=True, accessible=True)
+            db.session.add(room)
+            db.session.commit()
+        else:
+            open_code = open_room.code
+
+        return open_code
 
     def generate_private_room():
-        #TODO: Generate new code and add to database as private room.
-        return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+        new_code = generate_unique_code()
+
+        # Add new_code to db as private room
+        room = Room(code=new_code, public=False, accessible=True)
+        db.session.add(room)
+        db.session.commit()
+
+        return new_code
+    
+    def generate_unique_code():
+        new_code = ''.join(random.choices(string.ascii_letters + string.digits, k=8)) # Generate new code
+
+        # Make sure new code does not already exist in db
+        while db.session.get(Room, new_code):
+            new_code = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+
+        return new_code
+    
+    def add_this_player(code):
+        plr = PlayerInRoom(
+            room_code=code,
+            username=current_user.username,
+            car_color=session['car_color'],
+            car_filter=session['car_filter']
+        )
+        db.session.add(plr)
+        db.session.commit()
+
+    def delete_this_player():
+        plr = db.session.scalars(select(PlayerInRoom).where(PlayerInRoom.username == current_user.username)).first()
+        db.session.delete(plr)
+        db.session.commit()
+
+    def clear_session_data():
+        session.pop('code', None)
+        session.pop('car_color', None)
+        session.pop('car_filter', None)
+
+    @socketio.on('connect')
+    def connect(auth=None):
+        room_code = session['code']
+        join_room(room_code)
+        add_this_player(room_code)
+
+        room = db.session.get(Room, room_code)
+        leader_id = db.session.scalar(select(func.min(PlayerInRoom.id)).where(PlayerInRoom.room_code == room_code))
+
+        # Room size limit
+        if len(room.plrs) >= 5:
+            print(len(room.plrs))
+            room.accessible = False
+            db.session.commit()
+
+        emit('players_bars', {
+            'bars_data': get_bars_data(room), 
+            'leader_id': leader_id
+            }, to=room_code)
+        
+    @socketio.on('disconnect')
+    def disconnect(reason=None):
+        room_code = session['code']
+        leave_room(room_code)
+        delete_this_player()
+
+        room = db.session.get(Room, room_code)
+        leader_id = None
+
+        # Close room
+        if len(room.plrs) == 0:
+            db.session.delete(room)
+            db.session.commit()
+        else:
+            if not room.accessible:
+                # Reopen the room
+                room.accessible = True
+                db.session.commit()
+            leader_id = db.session.scalar(select(func.min(PlayerInRoom.id)).where(PlayerInRoom.room_code == room_code))
+
+        emit('players_bars', {
+            'bars_data': get_bars_data(room), 
+            'leader_id': leader_id
+            }, to=room_code)
+        
+    game_progress = {}
+    
+    @socketio.on('start_game')
+    def start_all_games():
+        game_progress[session['code']] = {}
+        emit('start_game', to=session['code'])
+        socketio.start_background_task(game_loop, session['code'])
+
+    @socketio.on('update_bar')
+    def update_progress(data):
+        id = data[0]
+        progress = data[1]
+
+        if progress >= 100:
+            game_progress[session['code']]['winner'] = current_user.username
+        game_progress[session['code']][id] = progress
+
+    def game_loop(room_code):
+        while room_code in game_progress:
+            socketio.emit('update_bar', game_progress[room_code], to=room_code)
+            print(game_progress[room_code])
+
+            if game_progress[room_code].get('winner'):
+                socketio.emit('winner', game_progress[room_code].get('winner'), to=room_code)
+                game_progress.pop(room_code)
+                break
+
+            socketio.sleep(0.2)
+
+    def get_bars_data(room):
+        plrs = room.plrs
+        list_of_dicts = []
+        for plr in plrs:
+            list_of_dicts.append({
+                'id': plr.id,
+                'username': plr.username,
+                'car_color': plr.car_color,
+                'car_filter': plr.car_filter
+            })
+        return list_of_dicts

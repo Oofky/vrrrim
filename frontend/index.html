@@ -46,11 +46,11 @@
             <form action="{{ url_for('index') }}" method="POST">
                 <div class="form-group">
                     <label for="username">Username</label>
-                    <input type="text" name="username" id="username" autofocus>
+                    <input type="text" name="username" id="username" autofocus required minlength="4" maxlength="20">
                 </div>
                 <div class="form-group">
                     <label for="pass">Password</label>
-                    <input type="password" name="password" id="pass">
+                    <input type="password" name="password" id="pass" required minlength="4" maxlength="20">
                     <span id="showpwd" class="fa fa-eye-slash"></span>
                 </div>
                 <div class="form-group">
@@ -102,7 +102,12 @@
                 // Change the button name to match the active tab
                 document.getElementById('btn-play').textContent = tab.textContent;
                 // Change the hidden value to match the active tab
-                document.getElementById('hidden-val').value = 'signup'
+                if (tab.textContent == 'Login') {
+                    document.getElementById('hidden-val').value = 'login';
+                } else if (tab.textContent == 'Sign Up') {
+                    document.getElementById('hidden-val').value = 'signup';
+                }
+                
             });
         });
     </script>

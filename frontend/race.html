@@ -71,53 +71,23 @@
             parent: document.getElementById("code-mirror-editor")
         })
 
-        const startButton = document.getElementById('startButton');
-        startButton.addEventListener('click', () => {
-            // Disable the button so player cannot click it multiple times
-            startButton.disabled = true;
+        window.set_left_editor_editable = () => { // So the socketIO script below can use it
+            view.a.dispatch({
+                effects: [
+                    editableComp.reconfigure(EditorView.editable.of(true)),
+                    readOnlyComp.reconfigure(EditorState.readOnly.of(false))
+                ]
+            });
+        };
 
-            // Countdown 3s
-            const wait = (time) => new Promise(resolve => setTimeout(resolve, time));
-            startButton.textContent = '3...';
-            wait(1000).then(() => {
-                startButton.textContent = '2...';
-                return (wait(1000));
-            }).then(() => {
-                startButton.textContent = '1...';
-                return (wait(1000));
-            }).then(() => {
-                startButton.textContent = 'GO!';
-
-                // Set left editor to be editable by player
-                view.a.dispatch({
-                    effects: [
-                        editableComp.reconfigure(EditorView.editable.of(true)),
-                        readOnlyComp.reconfigure(EditorState.readOnly.of(false))
-                    ]
-                });
-
-                // Start calculating progress
-                calcProgressLoop();
-            })
-        });
-
-        function calcProgressLoop() {
+        window.calc_progress_loop = (id) => { // So the socketIO script below can use it
             const diffs = dmp.diff_main(view.a.state.doc.toString(), result_doc);
             const dist = dmp.diff_levenshtein(diffs);
             const progress = Math.max(0, Math.floor((maxDist - dist) / maxDist * 100));
+ 
+            window.fire_progress(id, progress);
 
-            document.getElementById('progressBar').value = progress;
-            document.getElementById('race-car').style.left = `${progress}%`; 
-            //TODO: Should send this data to server as well, so server can send to other players
-
-            if (progress >= 100) {
-                setTimeout(() => {
-                    alert("You win!"); //TODO: make this look nicer
-                    location.href = '{{ url_for("index") }}';
-                }, 100);
-            } else {
-                setTimeout(calcProgressLoop, 200);
-            }
+            setTimeout(calc_progress_loop, 200, id);
         }
     </script>
 </head>
@@ -176,11 +146,6 @@
     </div>
 
     <div id="progress-wrapper" style="padding: 0px 32px; margin-top: 16px">
-        <label for="progressBar" style="color: #79838c; font-family: 'Barlow', sans-serif;">Your progress: </label>
-        <div id="progress-track">
-            <img src="assets/logos/avatar.png" id="race-car"> 
-            <progress id="progressBar" value="0" max="100"></progress>
-        </div>
     </div>
 
     <!-- Cheatsheet overlay -->
@@ -255,20 +220,110 @@
             }
         });
     </script>
-    <script>
-        // Apply the selected car color and filter to the progress bar and car
-        const carColor = "{{ car_color }}";
-        const carFilter = "{{ car_filter }}";
-        const style = document.createElement('style');
-        style.textContent = `
-            progress::-webkit-progress-value {
-                background-color: ${carColor} !important;
-            }
-        `;
-        document.head.appendChild(style);
-        document.getElementById('race-car').style.filter = carFilter;
-    </script>
 
+    <!-- SocketIO -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        var socketio = io();
+
+        const progress_div = document.getElementById("progress-wrapper");
+        const startButton = document.getElementById('startButton');
+        const create_bar = (id, username, filter) => {
+            return `
+                <label for="progressBar${id}" style="color: #79838c; font-family: 'Barlow', sans-serif;">${username}</label>
+                <div class="progress-track">
+                    <img src="assets/logos/avatar.png" id="race-car${id}" class="race-car" style="filter: ${filter}"> 
+                    <progress id="progressBar${id}" value="0" max="100"></progress>
+                </div>`;
+        }
+        window.fire_progress = (id, progress) => socketio.emit('update_bar', [id, progress]); // So the code mirror script above can use it
+        let my_id = null;
+
+        socketio.on('players_bars', (data) => {
+            const bars_data = data.bars_data;
+            const leader_id = data.leader_id;
+            let total_html = '';
+            let total_style = '';
+
+            for (const plr of bars_data) {
+                if (plr.username == '{{username}}') {
+                    my_id = plr.id;
+                }
+            }
+
+            for (const plr of bars_data) {
+                // Set bar label to include the leader tag
+                let bar_label = plr.username;
+                if (leader_id == plr.id) {
+                    bar_label += ' (Leader)';
+                }
+                total_html += create_bar(plr.id, bar_label, plr.car_filter);
+                
+                total_style += `
+                    progress#progressBar${plr.id}::-webkit-progress-value {
+                        background-color: ${plr.car_color} !important;
+                    }
+                `;
+            }
+
+            progress_div.innerHTML = total_html;
+            // Apply the selected car color and filter to the progress bar and car
+            const style = document.createElement('style');
+            style.textContent = total_style;
+            document.head.appendChild(style);
+
+            // Change the start button according the leader status
+            if (my_id == leader_id) {
+                startButton.innerHTML = '▶ Start';
+                startButton.disabled = false;
+            } else {
+                startButton.innerHTML = 'Wait for leader to start...';
+                startButton.disabled = true;
+            }
+        })
+
+        // Fire event to tell all players to start
+        startButton.addEventListener('click', () => socketio.emit('start_game'));
+
+        // Detect event to start
+        socketio.on('start_game', () => {
+            // Disable the button so player cannot click it multiple times
+            startButton.disabled = true;
+
+            // Countdown 3s
+            const wait = (time) => new Promise(resolve => setTimeout(resolve, time));
+            startButton.textContent = '3...';
+            wait(1000).then(() => {
+                startButton.textContent = '2...';
+                return (wait(1000));
+            }).then(() => {
+                startButton.textContent = '1...';
+                return (wait(1000));
+            }).then(() => {
+                startButton.textContent = 'GO!';
+                window.set_left_editor_editable();
+
+                // Start calculating progress
+                window.calc_progress_loop(my_id);
+            })
+        })
+
+        socketio.on('update_bar', (data) => {
+            for (const id in data) {
+                const progress = data[id];
+                const bar = document.getElementById('progressBar' + id)
+                const car = document.getElementById('race-car' + id)
+
+                bar.value = progress;
+                car.style.left = `${progress}%`;
+            }
+        })
+
+        socketio.on('winner', (winner) => {
+            alert(winner + ' wins!'); //TODO: make this look nicer
+            location.href = '{{ url_for("index") }}';
+        })
+    </script>
 </body>
 
 </html>

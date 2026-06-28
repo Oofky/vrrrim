@@ -199,17 +199,13 @@ progress::-webkit-progress-bar {
     background-color: #0D1117;
 }
 
-progress::-webkit-progress-value {
-    background-color: #00BFFF;
-}
-
-#progress-track {
+.progress-track {
     position: relative;
     width: 92.5%;
     margin-top: 8px;
 }
 
-#race-car {
+.race-car {
     position: absolute;
     height: 75px;
     top: 50%;
