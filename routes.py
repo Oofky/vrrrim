@@ -149,6 +149,12 @@ def register_routes(app, db, bcrypt, socketio):
         room_code = session['code']
         join_room(room_code)
         incr_num_of_plrs(room_code)
+
+        # Room size limit
+        if db.session.scalars(select(Room).where(Room.code == room_code)).first().num_of_plrs >= 5:
+            db.session.execute(update(Room).where(Room.code == room_code).values(accessible=False))
+            db.session.commit()
+
         send({
             'event': 'join',
             'username': current_user.username,
