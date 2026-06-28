@@ -3,7 +3,7 @@ from flask_login import current_user, login_user, logout_user
 from flask_socketio import emit, join_room, leave_room
 from sqlalchemy import delete, select, update
 import random, string
-from models import Room, User
+from models import PlayerInRoom, Room, User
 
 def register_routes(app, db, bcrypt, socketio):
     @app.route('/', methods=['GET', 'POST'])
@@ -107,7 +107,7 @@ def register_routes(app, db, bcrypt, socketio):
             open_code = generate_unique_code()
 
             # Add open_code to db as public room
-            room = Room(code=open_code, public=True, accessible=True, num_of_plrs=0)
+            room = Room(code=open_code, public=True, accessible=True)
             db.session.add(room)
             db.session.commit()
         else:
@@ -119,7 +119,7 @@ def register_routes(app, db, bcrypt, socketio):
         new_code = generate_unique_code()
 
         # Add new_code to db as private room
-        room = Room(code=new_code, public=False, accessible=True, num_of_plrs=0)
+        room = Room(code=new_code, public=False, accessible=True)
         db.session.add(room)
         db.session.commit()
 
@@ -134,13 +134,22 @@ def register_routes(app, db, bcrypt, socketio):
 
         return new_code
     
-    def incr_num_of_plrs(code):
-        db.session.execute(update(Room).where(Room.code == code).values(num_of_plrs=Room.num_of_plrs + 1))
+    def add_this_player(code):
+        plr = PlayerInRoom(
+            room_code=code,
+            username=current_user.username,
+            car_color=session['car_color'],
+            car_filter=session['car_filter']
+        )
+        db.session.add(plr)
         db.session.commit()
+        session['plr_id'] = plr.id
 
-    def decr_num_of_plrs(code):
-        db.session.execute(update(Room).where(Room.code == code).values(num_of_plrs=Room.num_of_plrs - 1))
+    def delete_this_player():
+        plr = db.session.get(PlayerInRoom, session['plr_id'])
+        db.session.delete(plr)
         db.session.commit()
+        session.pop('plr_id', None)
 
     def clear_session_data():
         session.pop('code', None)
@@ -151,33 +160,34 @@ def register_routes(app, db, bcrypt, socketio):
     def connect(auth):
         room_code = session['code']
         join_room(room_code)
-        incr_num_of_plrs(room_code)
+        add_this_player(room_code)
+
+        room = db.session.scalars(select(Room).where(Room.code == room_code)).first()
 
         # Room size limit
-        if db.session.scalars(select(Room).where(Room.code == room_code)).first().num_of_plrs >= 5:
-            db.session.execute(update(Room).where(Room.code == room_code).values(accessible=False))
+        if len(room.plrs) >= 5:
+            print(len(room.plrs))
+            room.accessible = False
             db.session.commit()
 
-        emit('join', {
-            'username': current_user.username,
-            'car_color': session['car_color'],
-            'car_filter': session['car_filter']
-            }, to=room_code)
+        emit('join', {}, to=room_code)
         
     @socketio.on('disconnect')
     def disconnect(reason):
         room_code = session['code']
         leave_room(room_code)
-        decr_num_of_plrs(room_code)
+        delete_this_player()
+
+        room = db.session.scalars(select(Room).where(Room.code == room_code)).first()
 
         # Close room
-        if db.session.scalars(select(Room).where(Room.code == room_code)).first().num_of_plrs <= 0:
-            db.session.execute(delete(Room).where(Room.code == room_code))
+        if len(room.plrs) == 0:
+            db.session.delete(room)
             db.session.commit()
-        elif not db.session.scalars(select(Room).where(Room.code == room_code)).first().accessible:
+        elif not room.accessible:
             # Reopen the room
-            db.session.execute(update(Room).where(Room.code == room_code).values(accessible=True))
+            room.accessible = True
             db.session.commit()
 
-        emit('leave', {'username': current_user.username}, to=room_code)
+        emit('leave', {}, to=room_code)
 

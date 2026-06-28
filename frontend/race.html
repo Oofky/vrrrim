@@ -126,6 +126,16 @@
     <script type="text/javascript">
         var socketio = io();
 
+        const progress_div = document.getElementById("progress-wrapper");
+        const create_bar = (username, car_color, car_filter) => {
+            const content = `
+            <label for="progressBar" style="color: #79838c; font-family: 'Barlow', sans-serif;">Your progress: </label>
+            <div id="progress-track">
+                <img src="assets/logos/avatar.png" id="race-car"> 
+                <progress id="progressBar" value="0" max="100"></progress>
+            </div>`
+        }
+
         socketio.on('join', (data) => {
 
         })
@@ -197,16 +207,6 @@
     </div>
 
     <div id="progress-wrapper" style="padding: 0px 32px; margin-top: 16px">
-        <label for="progressBar" style="color: #79838c; font-family: 'Barlow', sans-serif;">Your progress: </label>
-        <div id="progress-track">
-            <img src="assets/logos/avatar.png" id="race-car"> 
-            <progress id="progressBar" value="0" max="100"></progress>
-        </div>
-        <label for="progressBar" style="color: #79838c; font-family: 'Barlow', sans-serif;">Your progress: </label>
-        <div id="progress-track">
-            <img src="assets/logos/avatar.png" id="race-car"> 
-            <progress id="progressBar" value="0" max="100"></progress>
-        </div>
         <label for="progressBar" style="color: #79838c; font-family: 'Barlow', sans-serif;">Your progress: </label>
         <div id="progress-track">
             <img src="assets/logos/avatar.png" id="race-car"> 
