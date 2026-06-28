@@ -33,7 +33,7 @@ def create_app():
     bcrypt = Bcrypt(app)
 
     # SocketIO
-    socketio.init_app(app)
+    socketio.init_app(app, cors_allowed_origins=['http://localhost:5500', 'https://vrrrim.onrender.com'])
 
     # Register Flask routes
     from routes import register_routes
