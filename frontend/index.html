@@ -102,7 +102,12 @@
                 // Change the button name to match the active tab
                 document.getElementById('btn-play').textContent = tab.textContent;
                 // Change the hidden value to match the active tab
-                document.getElementById('hidden-val').value = 'signup'
+                if (tab.textContent == 'Login') {
+                    document.getElementById('hidden-val').value = 'login';
+                } else if (tab.textContent == 'Sign Up') {
+                    document.getElementById('hidden-val').value = 'signup';
+                }
+                
             });
         });
     </script>
