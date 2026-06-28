@@ -1,5 +1,6 @@
 from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_user, logout_user
+from flask_socketio import join_room, leave_room, send
 from sqlalchemy import select, update
 import random, string
 from models import Room, User
@@ -44,7 +45,7 @@ def register_routes(app, db, bcrypt, socketio):
                         return render_template('choose_avatar.html')
                     
                 # Else if no arg or invalid room code, access index page witout setting room code
-                session.pop('code', None)
+                clear_session_data()
                 return render_template('choose_avatar.html')
             
             elif request.method == 'POST': # Player clicked 'Play' or 'Create private room' or invalid POST request
@@ -52,22 +53,29 @@ def register_routes(app, db, bcrypt, socketio):
                 car_color = request.form.get('car_color')
                 car_filter = request.form.get('car_filter')
 
+                session['car_color'] = car_color
+                session['car_filter'] = car_filter
+
                 if clicked == 'play':
                     room_code = session.get('code')
                     if not room_code: # Join a public room
                         room_code = find_room()
                         session['code'] = room_code
-                    else:
-                        incr_num_of_plrs(room_code)
 
-                    return render_template('race.html', code=session['code'], car_color=car_color, car_filter=car_filter)
+                    return render_template('race.html', 
+                                           code=session['code'], 
+                                           car_color=session['car_color'], 
+                                           car_filter=session['car_filter'])
                 
                 elif clicked == 'private':
                     session['code'] = generate_private_room()
-                    return render_template('race.html', code=session['code'], car_color=car_color, car_filter=car_filter)
+                    return render_template('race.html', 
+                                           code=session['code'], 
+                                           car_color=session['car_color'], 
+                                           car_filter=session['car_filter'])
                 
                 # Else if invalid POST request, return index page
-                session.pop('code', None)
+                clear_session_data()
                 return redirect(url_for('index'))
             
     @app.route('/logout') #TODO: Add a logout button somewhere
@@ -99,12 +107,11 @@ def register_routes(app, db, bcrypt, socketio):
             open_code = generate_unique_code()
 
             # Add open_code to db as public room
-            room = Room(code=open_code, public=True, accessible=True, num_of_plrs=1)
+            room = Room(code=open_code, public=True, accessible=True, num_of_plrs=0)
             db.session.add(room)
             db.session.commit()
         else:
             open_code = open_room.code
-            incr_num_of_plrs(open_code)
 
         return open_code
 
@@ -113,7 +120,7 @@ def register_routes(app, db, bcrypt, socketio):
         new_code = generate_unique_code()
 
         # Add new_code to db as private room
-        room = Room(code=new_code, public=False, accessible=True, num_of_plrs=1)
+        room = Room(code=new_code, public=False, accessible=True, num_of_plrs=0)
         db.session.add(room)
         db.session.commit()
 
@@ -131,3 +138,21 @@ def register_routes(app, db, bcrypt, socketio):
     def incr_num_of_plrs(code):
         db.session.execute(update(Room).where(Room.code == code).values(num_of_plrs=Room.num_of_plrs + 1))
         db.session.commit()
+
+    def clear_session_data():
+        session.pop('code', None)
+        session.pop('car_color', None)
+        session.pop('car_filter', None)
+
+    @socketio.on('connect')
+    def connect(auth):
+        room_code = session['code']
+        join_room(room_code)
+        incr_num_of_plrs(room_code)
+        send({
+            'event': 'join',
+            'username': current_user.username,
+            'car_color': session['car_color'],
+            'car_filter': session['car_filter']
+            }, to=room_code)
+
