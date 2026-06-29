@@ -38,8 +38,8 @@ def register_routes(app, db, bcrypt, socketio):
                 
         else: # User is authenticated (has signed in)
             if request.method == 'GET': 
-                if (db.session.scalars(select(PlayerInRoom).where(PlayerInRoom.username == current_user.username)).first()):
-                    return 'You are already in a game in another tab. Try using an incognito tab and using a different account.'
+                # if (db.session.scalars(select(PlayerInRoom).where(PlayerInRoom.username == current_user.username)).first()):
+                #     return 'You are already in a game in another tab. Try using an incognito tab and using a different account.'
 
                 if len(request.args) > 0: # Joining private room / Invalid room code
                     room_code = next(iter(request.args)) # Get first parameter
