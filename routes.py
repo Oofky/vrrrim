@@ -6,6 +6,9 @@ import random, string
 from models import PlayerInRoom, Room, User
 
 def register_routes(app, db, bcrypt, socketio):
+
+    # Flask routes
+
     @app.route('/', methods=['GET', 'POST'])
     def index():
         if not current_user.is_authenticated:
@@ -17,14 +20,10 @@ def register_routes(app, db, bcrypt, socketio):
                 password = request.form.get('password')
 
                 if clicked == 'login':
-                    user = db.session.scalars(
-                        select(User).where(User.username == username)).first()
-
+                    user = db.session.scalar(select(User).where(User.username == username))
                     if not user: return login_failed() # No such username
-
                     if bcrypt.check_password_hash(user.password, password):
                         login_user(user)
-                        return redirect(url_for('index'))
                     else: return login_failed() # Wrong password
 
                 elif clicked == 'signup':
@@ -34,7 +33,8 @@ def register_routes(app, db, bcrypt, socketio):
                     db.session.add(user)
                     db.session.commit()
                     login_user(user)
-                    return redirect(url_for('index'))
+                
+                return redirect(url_for('index'))
                 
         else: # User is authenticated (has signed in)
             if request.method == 'GET': 
@@ -80,6 +80,8 @@ def register_routes(app, db, bcrypt, socketio):
         logout_user()
         return redirect(url_for('index'))
         
+    # Helper functions for Flask routes
+    
     def login_failed():
         flash('Your username or password is incorrect. Please try again.')
         return redirect(url_for('index'))
@@ -89,16 +91,21 @@ def register_routes(app, db, bcrypt, socketio):
         return redirect(url_for('index'))
     
     def username_exists(name):
-        return bool(db.session.scalars(select(User).where(User.username == name)).first())
+        return bool(db.session.scalar(select(User).where(User.username == name)))
 
     def room_joinable(code): # Returns True if room code exists in db AND is open
-        return bool(db.session.scalars(select(Room).where(Room.code == code, Room.accessible == True)).first())
+        return bool(db.session.scalar(select(Room).where(Room.code == code, Room.accessible == True)))
+    
+    def clear_session_data():
+        session.pop('code', None)
+        session.pop('car_color', None)
+        session.pop('car_filter', None)
 
     def find_room():
         open_code = ''
 
         # Find a public AND open room code in db
-        open_room = db.session.scalars(select(Room).where(Room.public == True, Room.accessible == True)).first()
+        open_room = db.session.scalar(select(Room).where(Room.public == True, Room.accessible == True))
 
         if not open_room: # If none available
             open_code = generate_unique_code()
@@ -111,6 +118,15 @@ def register_routes(app, db, bcrypt, socketio):
             open_code = open_room.code
 
         return open_code
+    
+    def generate_unique_code():
+        new_code = ''.join(random.choices(string.ascii_letters + string.digits, k=8)) # Generate new code
+
+        # Make sure new code does not already exist in db
+        while db.session.get(Room, new_code):
+            new_code = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+
+        return new_code
 
     def generate_private_room():
         new_code = generate_unique_code()
@@ -121,37 +137,10 @@ def register_routes(app, db, bcrypt, socketio):
         db.session.commit()
 
         return new_code
-    
-    def generate_unique_code():
-        new_code = ''.join(random.choices(string.ascii_letters + string.digits, k=8)) # Generate new code
 
-        # Make sure new code does not already exist in db
-        while db.session.get(Room, new_code):
-            new_code = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+    # SocketIO connection events
 
-        return new_code
-    
-    def add_this_player(code):
-        plr = PlayerInRoom(
-            room_code=code,
-            username=current_user.username,
-            car_color=session['car_color'],
-            car_filter=session['car_filter']
-        )
-        db.session.add(plr)
-        db.session.commit()
-
-    def delete_this_player():
-        plr = db.session.scalars(select(PlayerInRoom).where(PlayerInRoom.username == current_user.username)).first()
-        db.session.delete(plr)
-        db.session.commit()
-
-    def clear_session_data():
-        session.pop('code', None)
-        session.pop('car_color', None)
-        session.pop('car_filter', None)
-
-    @socketio.on('connect')
+    @socketio.on('connect') # Happens when race.html is accessed
     def connect(auth=None):
         room_code = session['code']
         join_room(room_code)
@@ -196,6 +185,25 @@ def register_routes(app, db, bcrypt, socketio):
             'leader_id': leader_id
             }, to=room_code)
         
+    # Helper functions for SocketIO connection events
+        
+    def add_this_player(code):
+        plr = PlayerInRoom(
+            room_code=code,
+            username=current_user.username,
+            car_color=session['car_color'],
+            car_filter=session['car_filter']
+        )
+        db.session.add(plr)
+        db.session.commit()
+
+    def delete_this_player():
+        plr = db.session.scalars(select(PlayerInRoom).where(PlayerInRoom.username == current_user.username)).first()
+        db.session.delete(plr)
+        db.session.commit()
+        
+    # SocketIO game loop events
+
     game_progress = {}
     
     @socketio.on('start_game')
@@ -212,6 +220,8 @@ def register_routes(app, db, bcrypt, socketio):
         if progress >= 100:
             game_progress[session['code']]['winner'] = current_user.username
         game_progress[session['code']][id] = progress
+
+    # Helper functions for SocketIO game loop events
 
     def game_loop(room_code):
         while room_code in game_progress:
