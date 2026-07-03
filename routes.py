@@ -141,7 +141,7 @@ def register_routes(app, db, bcrypt, socketio):
     # SocketIO connection events
 
     @socketio.on('connect') # Happens when race.html is accessed
-    def connect(auth=None):
+    def connect():
         room_code = session['code']
         join_room(room_code)
         add_this_player(room_code)
@@ -151,7 +151,6 @@ def register_routes(app, db, bcrypt, socketio):
 
         # Room size limit
         if len(room.plrs) >= 5:
-            print(len(room.plrs))
             room.accessible = False
             db.session.commit()
 
@@ -161,7 +160,7 @@ def register_routes(app, db, bcrypt, socketio):
             }, to=room_code)
         
     @socketio.on('disconnect')
-    def disconnect(reason=None):
+    def disconnect():
         room_code = session['code']
         leave_room(room_code)
         delete_this_player()
@@ -173,6 +172,8 @@ def register_routes(app, db, bcrypt, socketio):
         if len(room.plrs) == 0:
             db.session.delete(room)
             db.session.commit()
+            if game_progress.get(room_code):
+                game_progress.pop(room_code) # In case last player leaves while game loop ongoing
         else:
             if not room.accessible:
                 # Reopen the room
@@ -180,16 +181,17 @@ def register_routes(app, db, bcrypt, socketio):
                 db.session.commit()
             leader_id = db.session.scalar(select(func.min(PlayerInRoom.id)).where(PlayerInRoom.room_code == room_code))
 
-        emit('players_bars', {
-            'bars_data': get_bars_data(room), 
-            'leader_id': leader_id
-            }, to=room_code)
+            emit('players_bars', {
+                'bars_data': get_bars_data(room), 
+                'leader_id': leader_id
+                }, to=room_code)
         
     # Helper functions for SocketIO connection events
         
     def add_this_player(code):
         plr = PlayerInRoom(
             room_code=code,
+            socket_id=request.sid, # Only for deleting the correct player
             username=current_user.username,
             car_color=session['car_color'],
             car_filter=session['car_filter']
@@ -198,7 +200,7 @@ def register_routes(app, db, bcrypt, socketio):
         db.session.commit()
 
     def delete_this_player():
-        plr = db.session.scalars(select(PlayerInRoom).where(PlayerInRoom.username == current_user.username)).first()
+        plr = db.session.scalar(select(PlayerInRoom).where(PlayerInRoom.socket_id == request.sid))
         db.session.delete(plr)
         db.session.commit()
         
@@ -217,19 +219,20 @@ def register_routes(app, db, bcrypt, socketio):
         id = data[0]
         progress = data[1]
 
-        if progress >= 100:
-            game_progress[session['code']]['winner'] = current_user.username
-        game_progress[session['code']][id] = progress
+        if game_progress.get(session['code']): # In case all players leave the room, then this will be None
+            game_progress.get(session['code'])[id] = progress
+            if progress >= 100:
+                game_progress.get(session['code'])['winner'] = current_user.username
+            
 
     # Helper functions for SocketIO game loop events
 
     def game_loop(room_code):
         while room_code in game_progress:
-            socketio.emit('update_bar', game_progress[room_code], to=room_code)
-            print(game_progress[room_code])
+            socketio.emit('update_bar', game_progress.get(room_code), to=room_code)
 
-            if game_progress[room_code].get('winner'):
-                socketio.emit('winner', game_progress[room_code].get('winner'), to=room_code)
+            if game_progress.get(room_code).get('winner'):
+                socketio.emit('winner', game_progress.get(room_code).get('winner'), to=room_code)
                 game_progress.pop(room_code)
                 break
 
