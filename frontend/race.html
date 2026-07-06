@@ -316,11 +316,13 @@
         socketio.on('update_bar', (data) => {
             for (const id in data) {
                 const progress = data[id];
-                const bar = document.getElementById('progressBar' + id)
-                const car = document.getElementById('race-car' + id)
+                const bar = document.getElementById('progressBar' + id);
+                const car = document.getElementById('race-car' + id);
 
-                bar.value = progress;
-                car.style.left = `${progress}%`;
+                if (bar && car) {
+                    bar.value = progress;
+                    car.style.left = `${progress}%`;
+                }
             }
         })
 
