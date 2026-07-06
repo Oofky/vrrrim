@@ -21,7 +21,7 @@ class PlayerInRoom(db.Model):
     __tablename__ = 'player_in_room'
     id = db.Column(db.Integer, primary_key=True)
     room_code = db.Column(db.String, db.ForeignKey('room.code'))
-    socket_id = db.Column(db.String, unique=True)
+    socket_id = db.Column(db.String, nullable=False, unique=True)
     username = db.Column(db.String, nullable=False)
     car_color = db.Column(db.String, nullable=False)
     car_filter = db.Column(db.String, nullable=False)
