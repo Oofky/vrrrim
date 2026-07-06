@@ -90,6 +90,8 @@
             setTimeout(calc_progress_loop, 200, id);
         }
     </script>
+
+    <style id="carStyle"></style>
 </head>
 
 <body>
@@ -111,7 +113,7 @@
 
     <!-- Buttons -->
     <div style="display: flex; align-items: center; justify-content: center; gap: 12px; padding: 10px 32px 20px 32px;">
-        <button id="startButton">▶ Start</button>
+        <button id="startButton" disabled>▶ Start</button>
         <button id="copyButton">Copy invite link</button>
     </div>
 
@@ -236,6 +238,7 @@
                     <progress id="progressBar${id}" value="0" max="100"></progress>
                 </div>`;
         }
+
         window.fire_progress = (id, progress) => socketio.emit('update_bar', [id, progress]); // So the code mirror script above can use it
         let my_id = null;
 
@@ -246,7 +249,7 @@
             let total_style = '';
 
             for (const plr of bars_data) {
-                if (plr.username == '{{username}}') {
+                if (plr.socket_id == socketio.id) {
                     my_id = plr.id;
                 }
             }
@@ -254,7 +257,7 @@
             for (const plr of bars_data) {
                 // Set bar label to include the leader tag
                 let bar_label = plr.username;
-                if (leader_id == plr.id) {
+                if (plr.id == leader_id) {
                     bar_label += ' (Leader)';
                 }
                 total_html += create_bar(plr.id, bar_label, plr.car_filter);
@@ -267,17 +270,15 @@
             }
 
             progress_div.innerHTML = total_html;
-            // Apply the selected car color and filter to the progress bar and car
-            const style = document.createElement('style');
-            style.textContent = total_style;
-            document.head.appendChild(style);
+            // Apply the selected car color and filter to the car
+            document.getElementById('carStyle').textContent = total_style;
 
             // Change the start button according the leader status
             if (my_id == leader_id) {
-                startButton.innerHTML = '▶ Start';
+                startButton.textContent = '▶ Start';
                 startButton.disabled = false;
             } else {
-                startButton.innerHTML = 'Wait for leader to start...';
+                startButton.textContent = 'Wait for leader to start...';
                 startButton.disabled = true;
             }
         })

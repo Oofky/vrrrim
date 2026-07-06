@@ -2,12 +2,14 @@ from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_user, logout_user
 from flask_socketio import emit, join_room, leave_room
 from sqlalchemy import func, select
-import random, string
+import random, re, string
 from models import PlayerInRoom, Room, User
 
 def register_routes(app, db, bcrypt, socketio):
 
     # Flask routes
+
+    valid_username = re.compile(r'^\w{4,20}$') # 4-20 characters of alphanumeric and _, same as what the html input allows
 
     @app.route('/', methods=['GET', 'POST'])
     def index():
@@ -27,7 +29,8 @@ def register_routes(app, db, bcrypt, socketio):
                     else: return login_failed() # Wrong password
 
                 elif clicked == 'signup':
-                    if username_exists(username): return signup_failed()
+                    if username_exists(username): return signup_failed_taken()
+                    if not valid_username.match(username): return signup_failed_char()
                     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
                     user = User(username=username, password=hashed_password) #TODO: Add email field, also possibly a confirm password field
                     db.session.add(user)
@@ -65,11 +68,11 @@ def register_routes(app, db, bcrypt, socketio):
                         room_code = find_room()
                         session['code'] = room_code
 
-                    return render_template('race.html', code=session['code'], username=current_user.username)
+                    return render_template('race.html', code=session['code'])
                 
                 elif clicked == 'private':
                     session['code'] = generate_private_room()
-                    return render_template('race.html', code=session['code'], username=current_user.username)
+                    return render_template('race.html', code=session['code'])
                 
                 # Else if invalid POST request, return index page
                 clear_session_data()
@@ -86,8 +89,12 @@ def register_routes(app, db, bcrypt, socketio):
         flash('Your username or password is incorrect. Please try again.')
         return redirect(url_for('index'))
     
-    def signup_failed():
+    def signup_failed_taken():
         flash('Your username is taken. Please try another username.')
+        return redirect(url_for('index'))
+    
+    def signup_failed_char():
+        flash('Your username has invalid characters. Please try another username with only alphabet, numbers, and underscore.')
         return redirect(url_for('index'))
     
     def username_exists(name):
@@ -219,7 +226,7 @@ def register_routes(app, db, bcrypt, socketio):
         id = data[0]
         progress = data[1]
 
-        if game_progress.get(session['code']): # In case all players leave the room, then this will be None
+        if game_progress.get(session['code']) is not None: # In case all players leave the room, then this will be None
             game_progress.get(session['code'])[id] = progress
             if progress >= 100:
                 game_progress.get(session['code'])['winner'] = current_user.username
@@ -245,6 +252,7 @@ def register_routes(app, db, bcrypt, socketio):
             list_of_dicts.append({
                 'id': plr.id,
                 'username': plr.username,
+                'socket_id': plr.socket_id,
                 'car_color': plr.car_color,
                 'car_filter': plr.car_filter
             })
