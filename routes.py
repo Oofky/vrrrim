@@ -163,7 +163,8 @@ def register_routes(app, db, bcrypt, socketio):
 
         emit('players_bars', {
             'bars_data': get_bars_data(room), 
-            'leader_id': leader_id
+            'leader_id': leader_id,
+            'game_in_progress': False
             }, to=room_code)
         
     @socketio.on('disconnect')
@@ -188,9 +189,20 @@ def register_routes(app, db, bcrypt, socketio):
                 db.session.commit()
             leader_id = db.session.scalar(select(func.min(PlayerInRoom.id)).where(PlayerInRoom.room_code == room_code))
 
+            # Alter bars_data based on whether game is in progress or not
+            bars_data = get_bars_data(room)
+            room_progress = game_progress.get(room_code)
+            if room_progress is not None: # Game in progress, need to edit bars data
+                for dd in bars_data: # dd is dictionary, bcuz bars_data is list of dictionaries
+                    plr_progress = room_progress.get(dd['id'])
+                    if plr_progress is not None:
+                        dd['progress'] = plr_progress
+
+            # Emit based on whether game is in progress or not
             emit('players_bars', {
-                'bars_data': get_bars_data(room), 
-                'leader_id': leader_id
+                'bars_data': bars_data, 
+                'leader_id': leader_id,
+                'game_in_progress': room_progress is not None
                 }, to=room_code)
         
     # Helper functions for SocketIO connection events
@@ -198,7 +210,7 @@ def register_routes(app, db, bcrypt, socketio):
     def add_this_player(code):
         plr = PlayerInRoom(
             room_code=code,
-            socket_id=request.sid, # Only for deleting the correct player
+            socket_id=request.sid, # For deleting the correct player
             username=current_user.username,
             car_color=session['car_color'],
             car_filter=session['car_filter']
@@ -217,17 +229,23 @@ def register_routes(app, db, bcrypt, socketio):
     
     @socketio.on('start_game')
     def start_all_games():
-        game_progress[session['code']] = {}
-        emit('start_game', to=session['code'])
-        socketio.start_background_task(game_loop, session['code'])
+        if game_progress.get(session['code']) is None: # Only start game if it is not alr in progress already (defensive check)
+            # Lock room first
+            room = db.session.get(Room, session['code'])
+            room.accessible = False
+            db.session.commit()
+
+            game_progress[session['code']] = {}
+            emit('start_game', to=session['code'])
+            socketio.start_background_task(game_loop, session['code'])
 
     @socketio.on('update_bar')
     def update_progress(data):
-        id = data[0]
+        plr_id = data[0]
         progress = data[1]
 
         if game_progress.get(session['code']) is not None: # In case all players leave the room, then this will be None
-            game_progress.get(session['code'])[id] = progress
+            game_progress.get(session['code'])[plr_id] = progress
             if progress >= 100:
                 game_progress.get(session['code'])['winner'] = current_user.username
             
@@ -254,6 +272,7 @@ def register_routes(app, db, bcrypt, socketio):
                 'username': plr.username,
                 'socket_id': plr.socket_id,
                 'car_color': plr.car_color,
-                'car_filter': plr.car_filter
+                'car_filter': plr.car_filter,
+                'progress': 0
             })
         return list_of_dicts

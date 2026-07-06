@@ -245,6 +245,8 @@
         socketio.on('players_bars', (data) => {
             const bars_data = data.bars_data;
             const leader_id = data.leader_id;
+            const game_in_progress = data.game_in_progress;
+
             let total_html = '';
             let total_style = '';
 
@@ -273,13 +275,15 @@
             // Apply the selected car color and filter to the car
             document.getElementById('carStyle').textContent = total_style;
 
-            // Change the start button according the leader status
-            if (my_id == leader_id) {
-                startButton.textContent = '▶ Start';
-                startButton.disabled = false;
-            } else {
-                startButton.textContent = 'Wait for leader to start...';
-                startButton.disabled = true;
+            if (!game_in_progress) {
+                // Change the start button according the leader status
+                if (my_id == leader_id) {
+                    startButton.textContent = '▶ Start';
+                    startButton.disabled = false;
+                } else {
+                    startButton.textContent = 'Wait for leader to start...';
+                    startButton.disabled = true;
+                }
             }
         })
 
