@@ -30,13 +30,7 @@
         <h1 style="color: #00D4FF; margin-bottom: 20px;">Choose Your Ride</h1>
         <label style="color: #79838c; font-family: 'Barlow', sans-serif; display: block; text-align: center;">Racing
             as</label>
-        <h2>
-            {% if current_user.is_authenticated %}
-            {{ current_user.username }}
-            {% else %}
-            Guest 
-            {% endif %}
-        </h2>
+        <h2>{{ current_user.username }}</h2>
 
         <div id="choose-avatar">
             <div id="avatars">
@@ -48,7 +42,7 @@
                 
                 <!-- Color Swatches -->
                 <div id="swatches">
-                    <button class="swatch active" 
+                    <button class="swatch" 
                         data-color="brightness(0) saturate(100%) invert(55%) sepia(51%) saturate(3077%) hue-rotate(164deg) brightness(105%) contrast(108%)" 
                         data-hex="#00BFFF"
                         data-name="Neon Cyan"
@@ -96,7 +90,7 @@
                         data-name="Red"
                         style="background:#E8404A;"></button>
                 </div>
-                <p id="color-name">Neon Cyan</p>
+                <p id="color-name">White</p>
             </div>
         </div>
 

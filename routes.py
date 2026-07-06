@@ -2,12 +2,14 @@ from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_user, logout_user
 from flask_socketio import emit, join_room, leave_room
 from sqlalchemy import func, select
-import random, string
+import random, re, string
 from models import PlayerInRoom, Room, User
 
 def register_routes(app, db, bcrypt, socketio):
 
     # Flask routes
+
+    valid_username = re.compile(r'^\w{4,20}$') # 4-20 characters of alphanumeric and _, same as what the html input allows
 
     @app.route('/', methods=['GET', 'POST'])
     def index():
@@ -27,7 +29,8 @@ def register_routes(app, db, bcrypt, socketio):
                     else: return login_failed() # Wrong password
 
                 elif clicked == 'signup':
-                    if username_exists(username): return signup_failed()
+                    if username_exists(username): return signup_failed_taken()
+                    if not valid_username.match(username): return signup_failed_char()
                     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
                     user = User(username=username, password=hashed_password) #TODO: Add email field, also possibly a confirm password field
                     db.session.add(user)
@@ -65,11 +68,11 @@ def register_routes(app, db, bcrypt, socketio):
                         room_code = find_room()
                         session['code'] = room_code
 
-                    return render_template('race.html', code=session['code'], username=current_user.username)
+                    return render_template('race.html', code=session['code'])
                 
                 elif clicked == 'private':
                     session['code'] = generate_private_room()
-                    return render_template('race.html', code=session['code'], username=current_user.username)
+                    return render_template('race.html', code=session['code'])
                 
                 # Else if invalid POST request, return index page
                 clear_session_data()
@@ -86,8 +89,12 @@ def register_routes(app, db, bcrypt, socketio):
         flash('Your username or password is incorrect. Please try again.')
         return redirect(url_for('index'))
     
-    def signup_failed():
+    def signup_failed_taken():
         flash('Your username is taken. Please try another username.')
+        return redirect(url_for('index'))
+    
+    def signup_failed_char():
+        flash('Your username has invalid characters. Please try another username with only alphabet, numbers, and underscore.')
         return redirect(url_for('index'))
     
     def username_exists(name):
@@ -141,7 +148,7 @@ def register_routes(app, db, bcrypt, socketio):
     # SocketIO connection events
 
     @socketio.on('connect') # Happens when race.html is accessed
-    def connect(auth=None):
+    def connect():
         room_code = session['code']
         join_room(room_code)
         add_this_player(room_code)
@@ -151,17 +158,17 @@ def register_routes(app, db, bcrypt, socketio):
 
         # Room size limit
         if len(room.plrs) >= 5:
-            print(len(room.plrs))
             room.accessible = False
             db.session.commit()
 
         emit('players_bars', {
             'bars_data': get_bars_data(room), 
-            'leader_id': leader_id
+            'leader_id': leader_id,
+            'game_in_progress': False
             }, to=room_code)
         
     @socketio.on('disconnect')
-    def disconnect(reason=None):
+    def disconnect():
         room_code = session['code']
         leave_room(room_code)
         delete_this_player()
@@ -173,6 +180,8 @@ def register_routes(app, db, bcrypt, socketio):
         if len(room.plrs) == 0:
             db.session.delete(room)
             db.session.commit()
+            if game_progress.get(room_code):
+                game_progress.pop(room_code) # In case last player leaves while game loop ongoing
         else:
             if not room.accessible:
                 # Reopen the room
@@ -180,16 +189,28 @@ def register_routes(app, db, bcrypt, socketio):
                 db.session.commit()
             leader_id = db.session.scalar(select(func.min(PlayerInRoom.id)).where(PlayerInRoom.room_code == room_code))
 
-        emit('players_bars', {
-            'bars_data': get_bars_data(room), 
-            'leader_id': leader_id
-            }, to=room_code)
+            # Alter bars_data based on whether game is in progress or not
+            bars_data = get_bars_data(room)
+            room_progress = game_progress.get(room_code)
+            if room_progress is not None: # Game in progress, need to edit bars data
+                for dd in bars_data: # dd is dictionary, bcuz bars_data is list of dictionaries
+                    plr_progress = room_progress.get(dd['id'])
+                    if plr_progress is not None:
+                        dd['progress'] = plr_progress
+
+            # Emit based on whether game is in progress or not
+            emit('players_bars', {
+                'bars_data': bars_data, 
+                'leader_id': leader_id,
+                'game_in_progress': room_progress is not None
+                }, to=room_code)
         
     # Helper functions for SocketIO connection events
         
     def add_this_player(code):
         plr = PlayerInRoom(
             room_code=code,
+            socket_id=request.sid, # For deleting the correct player
             username=current_user.username,
             car_color=session['car_color'],
             car_filter=session['car_filter']
@@ -198,7 +219,7 @@ def register_routes(app, db, bcrypt, socketio):
         db.session.commit()
 
     def delete_this_player():
-        plr = db.session.scalars(select(PlayerInRoom).where(PlayerInRoom.username == current_user.username)).first()
+        plr = db.session.scalar(select(PlayerInRoom).where(PlayerInRoom.socket_id == request.sid))
         db.session.delete(plr)
         db.session.commit()
         
@@ -208,28 +229,35 @@ def register_routes(app, db, bcrypt, socketio):
     
     @socketio.on('start_game')
     def start_all_games():
-        game_progress[session['code']] = {}
-        emit('start_game', to=session['code'])
-        socketio.start_background_task(game_loop, session['code'])
+        if game_progress.get(session['code']) is None: # Only start game if it is not alr in progress already (defensive check)
+            # Lock room first
+            room = db.session.get(Room, session['code'])
+            room.accessible = False
+            db.session.commit()
+
+            game_progress[session['code']] = {}
+            emit('start_game', to=session['code'])
+            socketio.start_background_task(game_loop, session['code'])
 
     @socketio.on('update_bar')
     def update_progress(data):
-        id = data[0]
+        plr_id = data[0]
         progress = data[1]
 
-        if progress >= 100:
-            game_progress[session['code']]['winner'] = current_user.username
-        game_progress[session['code']][id] = progress
+        if game_progress.get(session['code']) is not None: # In case all players leave the room, then this will be None
+            game_progress.get(session['code'])[plr_id] = progress
+            if progress >= 100:
+                game_progress.get(session['code'])['winner'] = current_user.username
+            
 
     # Helper functions for SocketIO game loop events
 
     def game_loop(room_code):
         while room_code in game_progress:
-            socketio.emit('update_bar', game_progress[room_code], to=room_code)
-            print(game_progress[room_code])
+            socketio.emit('update_bar', game_progress.get(room_code), to=room_code)
 
-            if game_progress[room_code].get('winner'):
-                socketio.emit('winner', game_progress[room_code].get('winner'), to=room_code)
+            if game_progress.get(room_code).get('winner'):
+                socketio.emit('winner', game_progress.get(room_code).get('winner'), to=room_code)
                 game_progress.pop(room_code)
                 break
 
@@ -242,7 +270,9 @@ def register_routes(app, db, bcrypt, socketio):
             list_of_dicts.append({
                 'id': plr.id,
                 'username': plr.username,
+                'socket_id': plr.socket_id,
                 'car_color': plr.car_color,
-                'car_filter': plr.car_filter
+                'car_filter': plr.car_filter,
+                'progress': 0
             })
         return list_of_dicts
