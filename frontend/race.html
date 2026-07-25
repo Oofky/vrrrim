@@ -282,7 +282,7 @@
                 if (plr.id == leader_id) {
                     bar_label += ' (Leader)';
                 }
-                bar_label += '   ' // 3 spaces so that placement can slice properly
+                bar_label += ' <strong>' + plr.placement + '</strong>';
                 total_html += create_bar(plr.id, bar_label, plr.car_filter);
                 
                 total_style += `

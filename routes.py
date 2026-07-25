@@ -224,6 +224,10 @@ def register_routes(app, db, bcrypt, socketio):
                     if plr_progress is not None:
                         dd['progress'] = plr_progress
 
+                    if dd['socket_id'] in room_progress['rankings']:
+                        i = room_progress['rankings'].index(dd['socket_id'])
+                        dd['placement'] = index_to_placement[i]
+
             # Emit based on whether game is in progress or not
             emit('players_bars', {
                 'bars_data': bars_data, 
@@ -322,6 +326,7 @@ def register_routes(app, db, bcrypt, socketio):
                 'socket_id': plr.socket_id,
                 'car_color': plr.car_color,
                 'car_filter': plr.car_filter,
-                'progress': 0
+                'progress': 0,
+                'placement': '   ' # 3 spaces so that placement can slice properly
             })
         return list_of_dicts
