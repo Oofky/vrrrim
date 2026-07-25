@@ -84,7 +84,7 @@
             const diffs = dmp.diff_main(view.a.state.doc.toString(), result_doc);
             const dist = dmp.diff_levenshtein(diffs);
             const progress = Math.max(0, Math.floor((maxDist - dist) / maxDist * 100));
- 
+
             window.fire_progress(id, progress);
 
             setTimeout(calc_progress_loop, 200, id);
@@ -191,9 +191,68 @@
                         <div class="cheat-item"><kbd>ci"</kbd><span>Change inside quotes</span></div>
                         <div class="cheat-item"><kbd>di{</kbd><span>Delete inside braces</span></div>
                         <div class="cheat-item"><kbd>>></kbd><span>Indent line</span></div>
-                        <div class="cheat-item"><kbd><<</kbd><span>Unindent line</span></div>
+                        <div class="cheat-item"><kbd>
+                                <<< /kbd><span>Unindent line</span></div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Win screen overlay -->
+    <div id="win-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+     z-index: 2000; justify-content: center; align-items: center;">
+        <div id="win-modal" style="background: #161B22; border: 1px solid #30363D; border-radius: 16px;
+         padding: 40px 32px; width: 90%; max-width: 500px; text-align: center;">
+
+            <!-- Place & emoji -->
+            <div style="display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 8px;">
+                <span id="win-emoji" style="font-size: 48px;"></span>
+                <h1 id="win-place" style="font-family: 'Russo One', sans-serif; font-size: 48px; margin: 0;"></h1>
+            </div>
+            <p style="color: #8B949E; font-family: 'Barlow', sans-serif; margin-bottom: 28px;">Race Complete!</p>
+
+            <!-- Your stats -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px;
+             background: #0D1117; border: 1px solid #30363D; border-radius: 10px; padding: 20px;">
+                <div>
+                    <p id="my-speed"
+                        style="font-family: 'Russo One', sans-serif; font-size: 28px; color: #00BFFF; margin: 0;"></p>
+                    <p style="font-family: 'Barlow', sans-serif; font-size: 12px; color: #8B949E; margin: 0;">Speed</p>
+                </div>
+                <div>
+                    <p id="my-accuracy"
+                        style="font-family: 'Russo One', sans-serif; font-size: 28px; color: #FFB800; margin: 0;"></p>
+                    <p style="font-family: 'Barlow', sans-serif; font-size: 12px; color: #8B949E; margin: 0;">Accuracy
+                    </p>
+                </div>
+                <div>
+                    <p id="my-time"
+                        style="font-family: 'Russo One', sans-serif; font-size: 28px; color: #FF6B2B; margin: 0;"></p>
+                    <p style="font-family: 'Barlow', sans-serif; font-size: 12px; color: #8B949E; margin: 0;">Time</p>
+                </div>
+            </div>
+
+            <!-- Final standings -->
+            <h3 style="font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 700; color: #00BFFF;
+             text-align: left; margin-bottom: 12px; letter-spacing: 0.08em;">FINAL STANDINGS</h3>
+            <div id="final-standings" style="margin-bottom: 28px;"></div>
+
+            <!-- Buttons -->
+            <div style="display: flex; gap: 12px;">
+                <form action="{{ url_for('index') }}" method="GET" style="flex: 1;">
+                    <button type="submit" style="width: 100%; padding: 16px; background: #00BFFF; color: #0D1117;
+                    font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 700; border: none;
+                    border-radius: 8px; cursor: pointer; letter-spacing: 0.05em;">PLAY AGAIN</button>
+                </form>
+                <form action="{{ url_for('index') }}" method="POST" style="flex: 1;">
+                    <input type="hidden" name="clicked" value="private">
+                    <input type="hidden" name="car_color" value="{{ session.get('car_color', '#F5F0E8') }}">
+                    <input type="hidden" name="car_filter" value="{{ session.get('car_filter', 'brightness(100)') }}">
+                    <button type="submit" style="width: 100%; padding: 16px; background: #FF6B2B; color: #0D1117;
+                    font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 700; border: none;
+                    border-radius: 8px; cursor: pointer; letter-spacing: 0.05em;">CREATE PRIVATE ROOM</button>
+                </form>
             </div>
         </div>
     </div>
@@ -223,8 +282,21 @@
         });
     </script>
 
+    <!-- Vim cheatsheet keybind -->
+    <script>
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F1') {
+                e.preventDefault(); // stops browser help menu
+                const overlay = document.getElementById('cheatsheet-overlay');
+                overlay.classList.toggle('active');
+            }
+        });
+    </script>
+
     <!-- SocketIO -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"
+        integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA=="
+        crossorigin="anonymous"></script>
     <script type="text/javascript">
         var socketio = io();
 
@@ -263,7 +335,7 @@
                     bar_label += ' (Leader)';
                 }
                 total_html += create_bar(plr.id, bar_label, plr.car_filter);
-                
+
                 total_style += `
                     progress#progressBar${plr.id}::-webkit-progress-value {
                         background-color: ${plr.car_color} !important;

@@ -82,6 +82,10 @@ def register_routes(app, db, bcrypt, socketio):
     def logout():
         logout_user()
         return redirect(url_for('index'))
+
+    @app.route('/statistics')
+    def statistics():
+        return render_template('statistics.html')
         
     # Helper functions for Flask routes
     
