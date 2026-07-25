@@ -336,7 +336,7 @@
 
         socketio.on('update_bar', (data) => {
             for (const id in data) {
-                if (id !== 'rankings') {
+                if (id !== 'rankings' && id !== 'start_time') {
                     const progress = data[id];
                     const bar = document.getElementById('progressBar' + id);
                     const car = document.getElementById('race-car' + id);
@@ -349,8 +349,10 @@
             }
         })
 
-        socketio.on('winner', (placement) => {
-            alert('You got ' + placement + ' place!'); //TODO: make this look nicer
+        socketio.on('winner', (data) => {
+            const placement = data.placement;
+            const time_taken = data.time_taken;
+            alert('You got ' + placement + ' place!\nTime taken: ' + time_taken); //TODO: make this look nicer
             location.href = '{{ url_for("index") }}';
         })
 

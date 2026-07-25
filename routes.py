@@ -3,7 +3,7 @@ from flask_login import current_user, login_user, logout_user
 from flask_socketio import emit, join_room, leave_room
 from pathlib import Path
 from sqlalchemy import func, select
-import random, re, string
+import random, re, string, time
 from models import PlayerInRoom, Room, User
 
 def register_routes(app, db, bcrypt, socketio):
@@ -277,6 +277,7 @@ def register_routes(app, db, bcrypt, socketio):
 
             game_progress[session['code']] = {}
             game_progress[session['code']]['rankings'] = []
+            game_progress[session['code']]['start_time'] = time.perf_counter()
             emit('start_game', to=session['code'])
             socketio.start_background_task(game_loop, session['code'], app)
 
@@ -284,6 +285,12 @@ def register_routes(app, db, bcrypt, socketio):
     def update_progress(data):
         plr_id = data[0]
         progress = data[1]
+        room_code = session.get('code') 
+
+        if not room_code:
+            print('update_bar: no room code')
+            return
+
         room_progress = game_progress.get(session['code'])
 
         if room_progress is not None: # In case all players leave the room, then this will be None
@@ -291,13 +298,16 @@ def register_routes(app, db, bcrypt, socketio):
             if progress >= 100 and request.sid not in room_progress['rankings']: 
                 room_progress['rankings'].append(request.sid)
                 i = room_progress['rankings'].index(request.sid)
-                socketio.emit('winner', index_to_placement[i], to=request.sid) # Emit to the winner only
+                socketio.emit('winner', 
+                              {
+                                'placement': index_to_placement[i],
+                                'time_taken': str(round(time.perf_counter() - room_progress['start_time'], 2)) + 's'
+                              }, to=request.sid) # Emit to the winner only
                 socketio.emit('placement_label', 
                               {
                                 'id': db.session.scalar(select(PlayerInRoom).where(PlayerInRoom.socket_id == request.sid)).id,
                                 'placement': index_to_placement[i]
-                              },
-                              to=session['code'])      
+                              }, to=session['code'])      
 
     # Helper functions for SocketIO game loop events
 
