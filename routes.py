@@ -45,9 +45,6 @@ def register_routes(app, db, bcrypt, socketio):
                 
         else: # User is authenticated (has signed in)
             if request.method == 'GET': 
-                # if (db.session.scalars(select(PlayerInRoom).where(PlayerInRoom.username == current_user.username)).first()):
-                #     return 'You are already in a game in another tab. Try using an incognito tab and using a different account.'
-
                 if len(request.args) > 0: # Joining private room / Invalid room code
                     room_code = next(iter(request.args)) # Get first parameter
                     if room_joinable(room_code):
@@ -66,37 +63,25 @@ def register_routes(app, db, bcrypt, socketio):
                 session['car_color'] = car_color
                 session['car_filter'] = car_filter
 
-                text_num = random.randint(0, NUM_OF_TEXTS - 1)
-                input_text = 'console.log("Jello! ");'
-                output_text = '''function greet(name) {
-    console.log("Hello, " + name + "!");
-}'''
-
-                with open(text_path_f(text_num) / 'input.txt', 'r') as f:
-                    input_text = f.read()
-                with open(text_path_f(text_num) / 'output.txt', 'r') as f:
-                    output_text = f.read()
-
-                print("book")
-                print(input_text)
-                print(output_text)
-
                 if clicked == 'play':
                     room_code = session.get('code')
                     if not room_code: # Join a public room
                         room_code = find_room()
                         session['code'] = room_code
+                    
+                    texts = get_texts(session['code'])
                     return render_template('race.html', 
                                            code=session['code'], 
-                                           input_text=input_text, 
-                                           output_text=output_text)
+                                           input_text=texts[0], 
+                                           output_text=texts[1])
                 
                 elif clicked == 'private':
                     session['code'] = generate_private_room()
+                    texts = get_texts(session['code'])
                     return render_template('race.html', 
                                            code=session['code'], 
-                                           input_text=input_text, 
-                                           output_text=output_text)
+                                           input_text=texts[0], 
+                                           output_text=texts[1])
                 
                 # Else if invalid POST request, return index page
                 clear_session_data()
@@ -142,7 +127,7 @@ def register_routes(app, db, bcrypt, socketio):
             open_code = generate_unique_code()
 
             # Add open_code to db as public room
-            room = Room(code=open_code, public=True, accessible=True)
+            room = Room(code=open_code, public=True, accessible=True, text_num=random.randint(0, NUM_OF_TEXTS-1))
             db.session.add(room)
             db.session.commit()
         else:
@@ -163,11 +148,23 @@ def register_routes(app, db, bcrypt, socketio):
         new_code = generate_unique_code()
 
         # Add new_code to db as private room
-        room = Room(code=new_code, public=False, accessible=True)
+        room = Room(code=new_code, public=False, accessible=True, text_num=random.randint(0, NUM_OF_TEXTS-1))
         db.session.add(room)
         db.session.commit()
 
         return new_code
+    
+    def get_texts(room_code):
+        text_num = db.session.get(Room, room_code).text_num
+        input_text = 'console.log("Jello! ");'
+        output_text = '''function greet(name) {
+    console.log("Hello, " + name + "!");
+}'''
+        with open(text_path_f(text_num) / 'input.txt', 'r') as f:
+            input_text = f.read()
+        with open(text_path_f(text_num) / 'output.txt', 'r') as f:
+            output_text = f.read()
+        return (input_text, output_text)
 
     # SocketIO connection events
 

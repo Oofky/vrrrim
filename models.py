@@ -16,6 +16,7 @@ class Room(db.Model):
     public = db.Column(db.Boolean, nullable=False)
     accessible = db.Column(db.Boolean, nullable=False)
     plrs = db.relationship('PlayerInRoom', backref='room_obj', cascade='all, delete-orphan')
+    text_num = db.Column(db.Integer, nullable=False)
 
 class PlayerInRoom(db.Model):
     __tablename__ = 'player_in_room'
