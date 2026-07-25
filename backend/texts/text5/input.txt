@@ -1,0 +1,12 @@
+function pyramid(n) {
+    let current = "";
+    for (let x = 1; x <= n; x = x + 1) {
+        current = current + "*";
+        display(current);
+    }
+}
+pyramid(5);
+
+// display("1st");
+// display("2nd");
+// display("3rd");

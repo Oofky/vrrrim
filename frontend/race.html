@@ -26,16 +26,29 @@
         import { vim } from "https://esm.sh/@replit/codemirror-vim"
         import { diff_match_patch } from "https://esm.sh/diff-match-patch"
 
-        let start_doc = `console.log("Jello! ");`
-        let result_doc = `function greet(name) {
-    console.log("Hello, " + name + "!");
-}`
+        let start_doc = {{ input_text | tojson }};
+        let result_doc = {{ output_text | tojson }};
 
         const editableComp = new Compartment();
         const readOnlyComp = new Compartment();
 
         const dmp = new diff_match_patch();
         const maxDist = dmp.diff_levenshtein(dmp.diff_main(start_doc, result_doc));
+
+        const blockCopyPaste = EditorView.domEventHandlers({
+            copy: (event) => {
+                event.preventDefault();
+                return true; // Tells codemirror we handled the event so it doesn't run its own default
+            },
+            paste: (event) => {
+                event.preventDefault();
+                return true; 
+            },
+            cut: (event) => {
+                event.preventDefault();
+                return true;
+            }
+        })
 
         let view = new MergeView({
             a: {
@@ -49,8 +62,14 @@
                     EditorView.theme({
                         ".cm-cursor, .cm-dropCursor": {
                             "border-left-color": "#F5F0E8"
+                        },
+                        ".cm-content": {
+                            "-webkit-user-select": "none",
+                            "-ms-user-select": "none",
+                            "user-select": "none"
                         }
-                    })
+                    }),
+                    blockCopyPaste
                 ]
             },
             b: {
@@ -65,7 +84,8 @@
                             "-ms-user-select": "none",
                             "user-select": "none"
                         }
-                    })
+                    }),
+                    blockCopyPaste
                 ]
             },
             parent: document.getElementById("code-mirror-editor")
