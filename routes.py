@@ -169,8 +169,11 @@ def register_routes(app, db, bcrypt, socketio):
     # SocketIO connection events
 
     @socketio.on('connect') # Happens when race.html is accessed
-    def connect():
-        room_code = session['code']
+    def connect(auth=None):
+        room_code = session.get('code')
+        if not room_code:
+            print('connect: no room code')
+            return
         join_room(room_code)
         add_this_player(room_code)
 
@@ -189,8 +192,11 @@ def register_routes(app, db, bcrypt, socketio):
             }, to=room_code)
         
     @socketio.on('disconnect')
-    def disconnect():
-        room_code = session['code']
+    def disconnect(reason=None):
+        room_code = session.get('code')
+        if not room_code:
+            print('disconnect: no room code')
+            return
         leave_room(room_code)
 
         room_progress = game_progress.get(room_code)
@@ -202,6 +208,9 @@ def register_routes(app, db, bcrypt, socketio):
 
         room = db.session.get(Room, room_code)
         leader_id = None
+
+        if not room:
+            return
 
         # Close room
         if len(room.plrs) == 0:
