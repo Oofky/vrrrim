@@ -1,0 +1,10 @@
+console.log("second");
+console.log("first");
+console.log("fourth");
+console.log("third");
+for (let count = 0, count < 10, count = count + 1) {
+    console.log("hihi hehe haha huhu hoho");
+}
+console.log("fifth");
+console.log("sixth");
+console.log("seventh");

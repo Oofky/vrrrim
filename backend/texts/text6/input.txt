@@ -1,0 +1,10 @@
+function make_withdraw(balance) {
+     function withdraw(amount) {
+     }
+     return withdraw;
+}
+
+const a = make_withdraw(100);
+display(a(50));
+display(a(50));
+display(a(50));

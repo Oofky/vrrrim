@@ -1,0 +1,7 @@
+tries = request.form.get('tries')
+username = request.form.get('username')
+password = request.form.get('password')
+keep_the_user_signed_in = request.form.get('keep_the_user_signed_in')
+if keep_the_user_signed_in:
+    foo(keep_the_user_signed_in)
+    return keep_the_user_signed_in
