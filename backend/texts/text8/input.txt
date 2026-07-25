@@ -1,0 +1,3 @@
+attempts = request.form.get('attempts')
+username = request.form.get('username')
+password = request.form.get('password')

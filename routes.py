@@ -1,11 +1,15 @@
 from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_user, logout_user
 from flask_socketio import emit, join_room, leave_room
+from pathlib import Path
 from sqlalchemy import func, select
 import random, re, string
 from models import PlayerInRoom, Room, User
 
 def register_routes(app, db, bcrypt, socketio):
+
+    NUM_OF_TEXTS = 10
+    text_path_f = lambda x: Path(__file__).parent / 'backend' / 'texts' / ('text'+str(x))
 
     # Flask routes
 
@@ -62,17 +66,37 @@ def register_routes(app, db, bcrypt, socketio):
                 session['car_color'] = car_color
                 session['car_filter'] = car_filter
 
+                text_num = random.randint(0, NUM_OF_TEXTS - 1)
+                input_text = 'console.log("Jello! ");'
+                output_text = '''function greet(name) {
+    console.log("Hello, " + name + "!");
+}'''
+
+                with open(text_path_f(text_num) / 'input.txt', 'r') as f:
+                    input_text = f.read()
+                with open(text_path_f(text_num) / 'output.txt', 'r') as f:
+                    output_text = f.read()
+
+                print("book")
+                print(input_text)
+                print(output_text)
+
                 if clicked == 'play':
                     room_code = session.get('code')
                     if not room_code: # Join a public room
                         room_code = find_room()
                         session['code'] = room_code
-
-                    return render_template('race.html', code=session['code'])
+                    return render_template('race.html', 
+                                           code=session['code'], 
+                                           input_text=input_text, 
+                                           output_text=output_text)
                 
                 elif clicked == 'private':
                     session['code'] = generate_private_room()
-                    return render_template('race.html', code=session['code'])
+                    return render_template('race.html', 
+                                           code=session['code'], 
+                                           input_text=input_text, 
+                                           output_text=output_text)
                 
                 # Else if invalid POST request, return index page
                 clear_session_data()

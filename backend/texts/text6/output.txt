@@ -1,0 +1,15 @@
+function make_withdraw(balance, secret_password) {
+     function withdraw(amount, password) {
+         if (password !== secret_password) {
+             return "Wrong";
+         }
+     }
+     return withdraw;
+}
+
+const a = make_withdraw(100, '123');
+display(a(50, '123'));
+display(a(50, 'hello'));
+display(a(50, '234'));
+display(a(50, '123'));
+display(a(50, '123'));
