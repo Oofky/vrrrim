@@ -94,7 +94,7 @@ def register_routes(app, db, bcrypt, socketio):
 
     @app.route('/statistics')
     def statistics():
-        if not current_user.is_authenticated:
+        if not current_user.is_authenticated: # not needed because you can't access this page without logging in, but just in case
             return redirect(url_for('index'))
 
         # TODO: to query the database for the user's statistics and pass them to the template
@@ -299,9 +299,12 @@ def register_routes(app, db, bcrypt, socketio):
     def game_loop(room_code):
         while room_code in game_progress:
             socketio.emit('update_bar', game_progress.get(room_code), to=room_code)
-
-            if game_progress.get(room_code).get('winner'):
-                socketio.emit('winner', game_progress.get(room_code).get('winner'), to=room_code)
+            
+            progress = game_progress.get(room_code)
+            if progress.get('winner'):
+                # Build standings from finished order
+                standings = progress.get('standings', [])
+                socketio.emit('winner', standings, to=room_code)
                 game_progress.pop(room_code)
                 break
 

@@ -123,7 +123,7 @@
         <div style="display: flex; align-items: center; gap: 20px;">
             <button data-cheatsheet="true" style="background: transparent; border: 1px solid #F5F0E8; color: #F5F0E8;
                        padding: 8px 18px; font-family: 'Barlow', sans-serif; cursor: pointer;">
-                       Vim Cheatsheet<span style="color: #8B949E; font-size: 13px; margin-left: 6px;">F1</span>
+                Vim Cheatsheet<span style="color: #8B949E; font-size: 13px; margin-left: 6px;">F1</span>
             </button>
         </div>
     </nav>
@@ -163,8 +163,6 @@
             </div>
             <div style="flex: 1; background: #1C2128; border: 1px solid #30363D; border-top: none; border-left: none;
                     padding: 4px 12px; display: flex; justify-content: space-between;">
-                <!-- <span style="color: #8B949E; font-family: 'Barlow', sans-serif; font-size: 12px;">3 lines</span>
-                <span style="color: #8B949E; font-family: 'Barlow', sans-serif; font-size: 12px;">67 characters</span> -->
             </div>
         </div>
     </div>
@@ -207,14 +205,19 @@
                         <div class="cheat-item"><kbd>p</kbd><span>Paste after cursor</span></div>
                     </div>
                     <div class="cheatsheet-col">
-                        <h3 class="col-title">Advanced</h3>
+                        <h3 class="col-title">Advanced (Copying and Pasting)</h3>
                         <div class="cheat-item"><kbd>yyp</kbd><span>Duplicate line</span></div>
+                        <div class="cheat-item"><kbd>yiw</kbd><span> Copies the entire current word (excluding
+                                surrounding whitespace)</span></div>
+                        <div class="cheat-item"><kbd>yaw</kbd><span> Copies the entire current word (including
+                                surrounding whitespace)</span></div>
+                        <div class="cheat-item"><kbd>u</kbd><span>Undo</span></div>
+                        <div class="cheat-item"><kbd>r</kbd><span>Redo</span></div>
                         <div class="cheat-item"><kbd>ciw</kbd><span>Change inner word</span></div>
                         <div class="cheat-item"><kbd>ci"</kbd><span>Change inside quotes</span></div>
                         <div class="cheat-item"><kbd>di{</kbd><span>Delete inside braces</span></div>
                         <div class="cheat-item"><kbd>>></kbd><span>Indent line</span></div>
-                        <div class="cheat-item"><kbd>
-                                <<< /kbd><span>Unindent line</span></div>
+                        <div class="cheat-item"><kbd><<</kbd><span>Unindent line</span></div>
                     </div>
                 </div>
             </div>
@@ -234,48 +237,30 @@
             </div>
             <p style="color: #8B949E; font-family: 'Barlow', sans-serif; margin-bottom: 28px;">Race Complete!</p>
 
-            <!-- Your stats -->
+            <!-- Stats -->
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px;
              background: #0D1117; border: 1px solid #30363D; border-radius: 10px; padding: 20px;">
                 <div>
-                    <p id="my-speed"
+                    <p id="player-speed"
                         style="font-family: 'Russo One', sans-serif; font-size: 28px; color: #00BFFF; margin: 0;"></p>
                     <p style="font-family: 'Barlow', sans-serif; font-size: 12px; color: #8B949E; margin: 0;">Speed</p>
                 </div>
-                <div>
-                    <p id="my-accuracy"
+                <!-- <div>
+                    <p id="player-accuracy"
                         style="font-family: 'Russo One', sans-serif; font-size: 28px; color: #FFB800; margin: 0;"></p>
                     <p style="font-family: 'Barlow', sans-serif; font-size: 12px; color: #8B949E; margin: 0;">Accuracy
                     </p>
-                </div>
+                </div> -->
                 <div>
-                    <p id="my-time"
+                    <p id="player-time"
                         style="font-family: 'Russo One', sans-serif; font-size: 28px; color: #FF6B2B; margin: 0;"></p>
                     <p style="font-family: 'Barlow', sans-serif; font-size: 12px; color: #8B949E; margin: 0;">Time</p>
                 </div>
             </div>
 
-            <!-- Final standings -->
-            <h3 style="font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 700; color: #00BFFF;
-             text-align: left; margin-bottom: 12px; letter-spacing: 0.08em;">FINAL STANDINGS</h3>
-            <div id="final-standings" style="margin-bottom: 28px;"></div>
-
-            <!-- Buttons -->
-            <div style="display: flex; gap: 12px;">
-                <form action="{{ url_for('index') }}" method="GET" style="flex: 1;">
-                    <button type="submit" style="width: 100%; padding: 16px; background: #00BFFF; color: #0D1117;
-                    font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 700; border: none;
-                    border-radius: 8px; cursor: pointer; letter-spacing: 0.05em;">PLAY AGAIN</button>
-                </form>
-                <form action="{{ url_for('index') }}" method="POST" style="flex: 1;">
-                    <input type="hidden" name="clicked" value="private">
-                    <input type="hidden" name="car_color" value="{{ session.get('car_color', '#F5F0E8') }}">
-                    <input type="hidden" name="car_filter" value="{{ session.get('car_filter', 'brightness(100)') }}">
-                    <button type="submit" style="width: 100%; padding: 16px; background: #FF6B2B; color: #0D1117;
-                    font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 700; border: none;
-                    border-radius: 8px; cursor: pointer; letter-spacing: 0.05em;">CREATE PRIVATE ROOM</button>
-                </form>
-            </div>
+            <p style="color: #8B949E; font-family: 'Barlow', sans-serif; font-size: 13px;">
+                Returning to lobby in <span id="redirect-countdown">5</span>s...
+            </p>
         </div>
     </div>
 
@@ -420,10 +405,61 @@
             }
         })
 
-        socketio.on('winner', (winner) => {
-            alert(winner + ' wins!'); //TODO: make this look nicer
-            location.href = '{{ url_for("index") }}';
-        })
+        // socketio.on('winner', (winner) => {
+        //     alert(winner + ' wins!'); //TODO: make this look nicer
+        //     location.href = '{{ url_for("index") }}';
+        // })
+
+        // Script for Win screen overlay
+        const placeLabels = ['1ST PLACE', '2ND PLACE', '3RD PLACE', '4TH PLACE', '5TH PLACE', '6TH PLACE'];
+        const placeEmojis = ['🥇', '🥈', '🥉', '🏅', '🏅', '🏅'];
+        const placeColors = ['#FFB800', '#B0B8C1', '#CD7F32', '#8B949E', '#8B949E', '#8B949E'];
+
+        socketio.on('winner', (standings) => {
+            const overlay = document.getElementById('win-overlay');
+            overlay.style.display = 'flex';
+
+            const myEntry = standings.find(p => p.username === '{{ current_user.username }}');
+            const myPlace = standings.indexOf(myEntry);
+
+            document.getElementById('win-emoji').textContent = placeEmojis[myPlace] ?? '🏅';
+            document.getElementById('win-place').textContent = placeLabels[myPlace] ?? 'FINISHED';
+            document.getElementById('win-place').style.color = placeColors[myPlace] ?? '#8B949E';
+            document.getElementById('my-speed').textContent = myEntry ? myEntry.speed : '-';
+            document.getElementById('my-accuracy').textContent = myEntry ? myEntry.accuracy + '%' : '-';
+            document.getElementById('my-time').textContent = myEntry ? myEntry.time : '-';
+
+            setTimeout(() => {
+                location.href = '{{ url_for("index") }}';
+            }, 5000); // Redirect after 5 seconds
+        });
+
+        // Countdown to redirect to lobby after 10 seconds
+        socketio.on('winner', (standings) => {
+            const overlay = document.getElementById('win-overlay');
+            overlay.style.display = 'flex';
+
+            const myEntry = standings.find(p => p.username === '{{ current_user.username }}');
+            const myPlace = standings.indexOf(myEntry);
+
+            document.getElementById('win-emoji').textContent = placeEmojis[myPlace] ?? '🏅';
+            document.getElementById('win-place').textContent = placeLabels[myPlace] ?? 'FINISHED';
+            document.getElementById('win-place').style.color = placeColors[myPlace] ?? '#8B949E';
+            document.getElementById('my-speed').textContent = myEntry ? myEntry.speed : '-';
+            document.getElementById('my-accuracy').textContent = myEntry ? myEntry.accuracy + '%' : '-';
+            document.getElementById('my-time').textContent = myEntry ? myEntry.time : '-';
+
+            let count = 5;
+            const ticker = setInterval(() => {
+                count--;
+                document.getElementById('redirect-countdown').textContent = count;
+                if (count <= 0) {
+                    clearInterval(ticker);
+                    location.href = '{{ url_for("index") }}';
+                }
+            }, 1000);
+        });
+
     </script>
 </body>
 
