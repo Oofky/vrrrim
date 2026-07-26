@@ -418,6 +418,7 @@ progress::-webkit-progress-bar {
     border-radius: 8px;
     padding: 20px;
     text-align: center;
+    width: 100%;
 }
 
 .stat-label {

@@ -87,15 +87,34 @@ def register_routes(app, db, bcrypt, socketio):
                 clear_session_data()
                 return redirect(url_for('index'))
             
-    @app.route('/logout') #TODO: Add a logout button somewhere
+    @app.route('/logout') # logout button in choose_avatar.html 
     def logout():
         logout_user()
         return redirect(url_for('index'))
 
     @app.route('/statistics')
     def statistics():
-        return render_template('statistics.html')
+        if not current_user.is_authenticated:
+            return redirect(url_for('index'))
+
+        # TODO: to query the database for the user's statistics and pass them to the template
+        user_stats = {
+            'total_races': 12,
+            'wins': 5,
+            'win_rate': 41.7,
+            'best_speed': '78 WPM'
+        }
+
+        # TODO: query your DB for top players - MUST SORT BY WINS DESCENDING, THEN BEST SPEED DESCENDING, THEN TOTAL RACES DESCENDING, THEN USERNAME ASCENDING
+        global_leaderboard = [
+            {'username': 'maxverstappen', 'wins': 20, 'best_speed': '95 WPM', 'total_races': 30},
+            {'username': current_user.username, 'wins': 5, 'best_speed': '78 WPM', 'total_races': 12},
+            {'username': 'kimiantonelli', 'wins': 15, 'best_speed': '67 WPM', 'total_races': 25},
+            {'username': 'bearmanOLIVER', 'wins': 10, 'best_speed': '67 WPM', 'total_races': 81},
+        ]
         
+        return render_template('statistics.html', user_stats=user_stats, global_leaderboard=global_leaderboard)
+
     # Helper functions for Flask routes
     
     def login_failed():
