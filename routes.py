@@ -3,7 +3,7 @@ from flask_login import current_user, login_user, logout_user
 from flask_socketio import emit, join_room, leave_room
 from pathlib import Path
 from sqlalchemy import func, select
-import random, re, string
+import random, re, string, time
 from models import PlayerInRoom, Room, User
 
 def register_routes(app, db, bcrypt, socketio):
@@ -169,8 +169,11 @@ def register_routes(app, db, bcrypt, socketio):
     # SocketIO connection events
 
     @socketio.on('connect') # Happens when race.html is accessed
-    def connect():
-        room_code = session['code']
+    def connect(auth=None):
+        room_code = session.get('code')
+        if not room_code:
+            print('connect: no room code')
+            return
         join_room(room_code)
         add_this_player(room_code)
 
@@ -189,22 +192,34 @@ def register_routes(app, db, bcrypt, socketio):
             }, to=room_code)
         
     @socketio.on('disconnect')
-    def disconnect():
-        room_code = session['code']
+    def disconnect(reason=None):
+        room_code = session.get('code')
+        if not room_code:
+            print('disconnect: no room code')
+            return
         leave_room(room_code)
-        delete_this_player()
+
+        room_progress = game_progress.get(room_code)
+        if room_progress and request.sid in room_progress['rankings']:
+            # Player is ranked. Meaning player left after completing the race. Should not delete the PlayerInRoom
+            pass
+        else:
+            delete_this_player()
 
         room = db.session.get(Room, room_code)
         leader_id = None
+
+        if not room:
+            return
 
         # Close room
         if len(room.plrs) == 0:
             db.session.delete(room)
             db.session.commit()
-            if game_progress.get(room_code):
+            if room_progress:
                 game_progress.pop(room_code) # In case last player leaves while game loop ongoing
         else:
-            if not room.accessible:
+            if not room.accessible and not room_progress: # If game is ongoing, should not reopen the room
                 # Reopen the room
                 room.accessible = True
                 db.session.commit()
@@ -212,12 +227,15 @@ def register_routes(app, db, bcrypt, socketio):
 
             # Alter bars_data based on whether game is in progress or not
             bars_data = get_bars_data(room)
-            room_progress = game_progress.get(room_code)
             if room_progress is not None: # Game in progress, need to edit bars data
                 for dd in bars_data: # dd is dictionary, bcuz bars_data is list of dictionaries
                     plr_progress = room_progress.get(dd['id'])
                     if plr_progress is not None:
                         dd['progress'] = plr_progress
+
+                    if dd['socket_id'] in room_progress['rankings']:
+                        i = room_progress['rankings'].index(dd['socket_id'])
+                        dd['placement'] = index_to_placement[i]
 
             # Emit based on whether game is in progress or not
             emit('players_bars', {
@@ -241,8 +259,9 @@ def register_routes(app, db, bcrypt, socketio):
 
     def delete_this_player():
         plr = db.session.scalar(select(PlayerInRoom).where(PlayerInRoom.socket_id == request.sid))
-        db.session.delete(plr)
-        db.session.commit()
+        if plr:
+            db.session.delete(plr)
+            db.session.commit()
         
     # SocketIO game loop events
 
@@ -257,32 +276,64 @@ def register_routes(app, db, bcrypt, socketio):
             db.session.commit()
 
             game_progress[session['code']] = {}
+            game_progress[session['code']]['rankings'] = []
+            game_progress[session['code']]['start_time'] = time.perf_counter()
             emit('start_game', to=session['code'])
-            socketio.start_background_task(game_loop, session['code'])
+            socketio.start_background_task(game_loop, session['code'], app)
 
     @socketio.on('update_bar')
     def update_progress(data):
         plr_id = data[0]
         progress = data[1]
+        room_code = session.get('code') 
 
-        if game_progress.get(session['code']) is not None: # In case all players leave the room, then this will be None
-            game_progress.get(session['code'])[plr_id] = progress
-            if progress >= 100:
-                game_progress.get(session['code'])['winner'] = current_user.username
-            
+        if not room_code:
+            print('update_bar: no room code')
+            return
+
+        room_progress = game_progress.get(session['code'])
+
+        if room_progress is not None: # In case all players leave the room, then this will be None
+            room_progress[plr_id] = progress
+            if progress >= 100 and request.sid not in room_progress['rankings']: 
+                room_progress['rankings'].append(request.sid)
+                i = room_progress['rankings'].index(request.sid)
+                socketio.emit('winner', 
+                              {
+                                'placement': index_to_placement[i],
+                                'time_taken': str(round(time.perf_counter() - room_progress['start_time'], 2)) + 's'
+                              }, to=request.sid) # Emit to the winner only
+                socketio.emit('placement_label', 
+                              {
+                                'id': db.session.scalar(select(PlayerInRoom).where(PlayerInRoom.socket_id == request.sid)).id,
+                                'placement': index_to_placement[i]
+                              }, to=session['code'])      
 
     # Helper functions for SocketIO game loop events
 
-    def game_loop(room_code):
-        while room_code in game_progress:
-            socketio.emit('update_bar', game_progress.get(room_code), to=room_code)
+    index_to_placement = ["1st", "2nd", "3rd", "4th", "5th"]
 
-            if game_progress.get(room_code).get('winner'):
-                socketio.emit('winner', game_progress.get(room_code).get('winner'), to=room_code)
-                game_progress.pop(room_code)
-                break
+    def game_loop(room_code, app_para): 
+        # Need to get app context bcuz if not, I get error saying "Working outside application context"
+        with app_para.app_context():
+            while room_code in game_progress:
+                socketio.emit('update_bar', game_progress.get(room_code), to=room_code)
 
-            socketio.sleep(0.2)
+                # Game ends when num of players in the rankings list is same as num of players in room
+                # Note that when players who are ranked disconnect from the room, they are NOT removed from the db
+                # But if players disconnect without being ranked, they are removed from the db
+                # That's why this works
+                if len(game_progress.get(room_code).get('rankings')) == len(db.session.get(Room, room_code).plrs):
+                    # Close the room, break
+                    room = db.session.get(Room, room_code)
+                    for plr in room.plrs:
+                        db.session.delete(plr)
+                    db.session.delete(room)
+                    db.session.commit()
+                    game_progress.pop(room_code)
+                    break
+
+                socketio.sleep(0.2)
 
     def get_bars_data(room):
         plrs = room.plrs
@@ -294,6 +345,7 @@ def register_routes(app, db, bcrypt, socketio):
                 'socket_id': plr.socket_id,
                 'car_color': plr.car_color,
                 'car_filter': plr.car_filter,
-                'progress': 0
+                'progress': 0,
+                'placement': '   ' # 3 spaces so that placement can slice properly
             })
         return list_of_dicts
