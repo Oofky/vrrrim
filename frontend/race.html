@@ -100,14 +100,14 @@
             });
         };
 
-        window.calc_progress_loop = (id) => { // So the socketIO script below can use it
+        window.calc_progress_loop = (id, room_code) => { // So the socketIO script below can use it
             const diffs = dmp.diff_main(view.a.state.doc.toString(), result_doc);
             const dist = dmp.diff_levenshtein(diffs);
             const progress = Math.max(0, Math.floor((maxDist - dist) / maxDist * 100));
+ 
+            window.fire_progress(id, progress, room_code);
 
-            window.fire_progress(id, progress);
-
-            setTimeout(calc_progress_loop, 200, id);
+            setTimeout(calc_progress_loop, 200, id, room_code);
         }
     </script>
 
@@ -243,12 +243,6 @@
                     <p style="font-family: 'Barlow', sans-serif; font-size: 12px; color: #8B949E; margin: 0;">Speed</p>
                 </div>
                 <div>
-                    <p id="player-accuracy"
-                        style="font-family: 'Russo One', sans-serif; font-size: 28px; color: #FFB800; margin: 0;"></p>
-                    <p style="font-family: 'Barlow', sans-serif; font-size: 12px; color: #8B949E; margin: 0;">Accuracy
-                    </p>
-                </div>
-                <div>
                     <p id="player-time"
                         style="font-family: 'Russo One', sans-serif; font-size: 28px; color: #FF6B2B; margin: 0;"></p>
                     <p style="font-family: 'Barlow', sans-serif; font-size: 12px; color: #8B949E; margin: 0;">Time</p>
@@ -308,14 +302,15 @@
         const startButton = document.getElementById('startButton');
         const create_bar = (id, username, filter) => {
             return `
-                <label for="progressBar${id}" style="color: #79838c; font-family: 'Barlow', sans-serif;">${username}</label>
+                <label for="progressBar${id}" id="bar-label${id}" style="color: #79838c; font-family: 'Barlow', sans-serif;">${username}</label>
                 <div class="progress-track">
                     <img src="assets/logos/avatar.png" id="race-car${id}" class="race-car" style="filter: ${filter}"> 
                     <progress id="progressBar${id}" value="0" max="100"></progress>
                 </div>`;
         }
 
-        window.fire_progress = (id, progress) => socketio.emit('update_bar', [id, progress]); // So the code mirror script above can use it
+        window.fire_progress = (id, progress, room_code) => 
+            socketio.emit('update_bar', [id, progress, room_code]); // So the code mirror script above can use it
         let my_id = null;
 
         socketio.on('players_bars', (data) => {
@@ -338,6 +333,7 @@
                 if (plr.id == leader_id) {
                     bar_label += ' (Leader)';
                 }
+                bar_label += ' <strong>' + plr.placement + '</strong>';
                 total_html += create_bar(plr.id, bar_label, plr.car_filter);
 
                 total_style += `
@@ -367,7 +363,7 @@
         startButton.addEventListener('click', () => socketio.emit('start_game'));
 
         // Detect event to start
-        socketio.on('start_game', () => {
+        socketio.on('start_game', (room_code) => {
             // Disable the button so player cannot click it multiple times
             startButton.disabled = true;
 
@@ -385,19 +381,21 @@
                 window.set_left_editor_editable();
 
                 // Start calculating progress
-                window.calc_progress_loop(my_id);
+                window.calc_progress_loop(my_id, room_code);
             })
         })
 
         socketio.on('update_bar', (data) => {
             for (const id in data) {
-                const progress = data[id];
-                const bar = document.getElementById('progressBar' + id);
-                const car = document.getElementById('race-car' + id);
+                if (id !== 'rankings' && id !== 'start_time') {
+                    const progress = data[id];
+                    const bar = document.getElementById('progressBar' + id);
+                    const car = document.getElementById('race-car' + id);
 
-                if (bar && car) {
-                    bar.value = progress;
-                    car.style.left = `${progress}%`;
+                    if (bar && car) {
+                        bar.value = progress;
+                        car.style.left = `${progress}%`;
+                    }
                 }
             }
         })
@@ -407,50 +405,33 @@
         const placeEmojis = ['🥇', '🥈', '🥉', '🏅', '🏅', '🏅'];
         const placeColors = ['#FFB800', '#B0B8C1', '#CD7F32', '#8B949E', '#8B949E', '#8B949E'];
 
-        socketio.on('winner', (standings) => {
+        socketio.on('winner', (data) => {
             const overlay = document.getElementById('win-overlay');
             overlay.style.display = 'flex';
 
-            const myEntry = standings.find(p => p.username === '{{ current_user.username }}');
-            const myPlace = standings.indexOf(myEntry);
+            const placement = data.placement;
+            const speed = data.speed;
+            const time = data.time;
 
-            document.getElementById('win-emoji').textContent = placeEmojis[myPlace] ?? '🏅';
-            document.getElementById('win-place').textContent = placeLabels[myPlace] ?? 'FINISHED';
-            document.getElementById('win-place').style.color = placeColors[myPlace] ?? '#8B949E';
-            document.getElementById('player-speed').textContent = myEntry ? myEntry.speed : '-';
-            document.getElementById('player-accuracy').textContent = myEntry ? myEntry.accuracy + '%' : '-';
-            document.getElementById('player-time').textContent = myEntry ? myEntry.time : '-';
+            document.getElementById('win-emoji').textContent = placeEmojis[placement] ?? '🏅';
+            document.getElementById('win-place').textContent = placeLabels[placement] ?? 'FINISHED';
+            document.getElementById('win-place').style.color = placeColors[placement] ?? '#8B949E';
+            document.getElementById('player-speed').textContent = speed ?? '-';
+            document.getElementById('player-time').textContent = time ?? '-';
 
             setTimeout(() => {
                 location.href = '{{ url_for("index") }}';
             }, 5000); // Redirect after 5 seconds
         });
 
-        // Countdown to redirect to lobby after 10 seconds
-        socketio.on('winner', (standings) => {
-            const overlay = document.getElementById('win-overlay');
-            overlay.style.display = 'flex';
-
-            const myEntry = standings.find(p => p.username === '{{ current_user.username }}');
-            const myPlace = standings.indexOf(myEntry);
-
-            document.getElementById('win-emoji').textContent = placeEmojis[myPlace] ?? '🏅';
-            document.getElementById('win-place').textContent = placeLabels[myPlace] ?? 'FINISHED';
-            document.getElementById('win-place').style.color = placeColors[myPlace] ?? '#8B949E';
-            document.getElementById('player-speed').textContent = myEntry ? myEntry.speed : '-';
-            document.getElementById('player-accuracy').textContent = myEntry ? myEntry.accuracy + '%' : '-';
-            document.getElementById('player-time').textContent = myEntry ? myEntry.time : '-';
-
-            let count = 5;
-            const ticker = setInterval(() => {
-                count--;
-                document.getElementById('redirect-countdown').textContent = count;
-                if (count <= 0) {
-                    clearInterval(ticker);
-                    location.href = '{{ url_for("index") }}';
-                }
-            }, 1000);
-        });
+        socketio.on('placement_label', (data) => {
+            const id = data.id;
+            const placement = data.placement
+            const bar_label = document.getElementById('bar-label' + id);
+            if (bar_label) {
+                bar_label.textContent = bar_label.textContent.slice(0, -3) + placement;
+            }
+        })
 
     </script>
 </body>
