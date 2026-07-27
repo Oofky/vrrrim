@@ -412,6 +412,7 @@ progress::-webkit-progress-bar {
     color: #8B949E;
 }
 
+/* Statistics card styling */
 .stat-card {
     background-color: #161B22;
     border: 1px solid #30363D;

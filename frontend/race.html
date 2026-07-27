@@ -245,12 +245,12 @@
                         style="font-family: 'Russo One', sans-serif; font-size: 28px; color: #00BFFF; margin: 0;"></p>
                     <p style="font-family: 'Barlow', sans-serif; font-size: 12px; color: #8B949E; margin: 0;">Speed</p>
                 </div>
-                <!-- <div>
+                <div>
                     <p id="player-accuracy"
                         style="font-family: 'Russo One', sans-serif; font-size: 28px; color: #FFB800; margin: 0;"></p>
                     <p style="font-family: 'Barlow', sans-serif; font-size: 12px; color: #8B949E; margin: 0;">Accuracy
                     </p>
-                </div> -->
+                </div>
                 <div>
                     <p id="player-time"
                         style="font-family: 'Russo One', sans-serif; font-size: 28px; color: #FF6B2B; margin: 0;"></p>
@@ -405,11 +405,6 @@
             }
         })
 
-        // socketio.on('winner', (winner) => {
-        //     alert(winner + ' wins!'); //TODO: make this look nicer
-        //     location.href = '{{ url_for("index") }}';
-        // })
-
         // Script for Win screen overlay
         const placeLabels = ['1ST PLACE', '2ND PLACE', '3RD PLACE', '4TH PLACE', '5TH PLACE', '6TH PLACE'];
         const placeEmojis = ['🥇', '🥈', '🥉', '🏅', '🏅', '🏅'];
@@ -425,9 +420,9 @@
             document.getElementById('win-emoji').textContent = placeEmojis[myPlace] ?? '🏅';
             document.getElementById('win-place').textContent = placeLabels[myPlace] ?? 'FINISHED';
             document.getElementById('win-place').style.color = placeColors[myPlace] ?? '#8B949E';
-            document.getElementById('my-speed').textContent = myEntry ? myEntry.speed : '-';
-            document.getElementById('my-accuracy').textContent = myEntry ? myEntry.accuracy + '%' : '-';
-            document.getElementById('my-time').textContent = myEntry ? myEntry.time : '-';
+            document.getElementById('player-speed').textContent = myEntry ? myEntry.speed : '-';
+            document.getElementById('player-accuracy').textContent = myEntry ? myEntry.accuracy + '%' : '-';
+            document.getElementById('player-time').textContent = myEntry ? myEntry.time : '-';
 
             setTimeout(() => {
                 location.href = '{{ url_for("index") }}';
@@ -445,9 +440,9 @@
             document.getElementById('win-emoji').textContent = placeEmojis[myPlace] ?? '🏅';
             document.getElementById('win-place').textContent = placeLabels[myPlace] ?? 'FINISHED';
             document.getElementById('win-place').style.color = placeColors[myPlace] ?? '#8B949E';
-            document.getElementById('my-speed').textContent = myEntry ? myEntry.speed : '-';
-            document.getElementById('my-accuracy').textContent = myEntry ? myEntry.accuracy + '%' : '-';
-            document.getElementById('my-time').textContent = myEntry ? myEntry.time : '-';
+            document.getElementById('player-speed').textContent = myEntry ? myEntry.speed : '-';
+            document.getElementById('player-accuracy').textContent = myEntry ? myEntry.accuracy + '%' : '-';
+            document.getElementById('player-time').textContent = myEntry ? myEntry.time : '-';
 
             let count = 5;
             const ticker = setInterval(() => {

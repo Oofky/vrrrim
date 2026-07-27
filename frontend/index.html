@@ -95,7 +95,9 @@
         integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
         crossorigin="anonymous"></script>
     <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+
     <script>
+        // Toggle Password Visibility
         $(document).ready(function () {
             $("#showpwd").on("click", function () {
                 $(this).toggleClass("fa-eye fa-eye-slash");
@@ -104,8 +106,8 @@
                 });
             });
         })
-    </script>
-    <script>
+
+        // Switch between Login and Sign Up tabs
         document.querySelectorAll('#table a').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('#table a').forEach(t => t.classList.remove('active'));
@@ -122,9 +124,7 @@
 
             });
         });
-    </script>
-
-    <script>
+   
         // Get all elements with class="closebtn"
         var close = document.getElementsByClassName("closebtn");
         var i;
