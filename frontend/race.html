@@ -235,7 +235,7 @@
             <p style="color: #8B949E; font-family: 'Barlow', sans-serif; margin-bottom: 28px;">Race Complete!</p>
 
             <!-- Stats -->
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px;
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 28px;
              background: #0D1117; border: 1px solid #30363D; border-radius: 10px; padding: 20px;">
                 <div>
                     <p id="player-speed"
@@ -419,9 +419,15 @@
             document.getElementById('player-speed').textContent = speed ?? '-';
             document.getElementById('player-time').textContent = time ?? '-';
 
-            setTimeout(() => {
-                location.href = '{{ url_for("index") }}';
-            }, 5000); // Redirect after 5 seconds
+            let count = 5;
+            const ticker = setInterval(() => {
+                count--;
+                document.getElementById('redirect-countdown').textContent = count;
+                if (count <= 0) {
+                    clearInterval(ticker);
+                    location.href = '{{ url_for("index") }}';
+                }
+            }, 1000);
         });
 
         socketio.on('placement_label', (data) => {

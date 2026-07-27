@@ -26,3 +26,12 @@ class PlayerInRoom(db.Model):
     username = db.Column(db.String, nullable=False)
     car_color = db.Column(db.String, nullable=False)
     car_filter = db.Column(db.String, nullable=False)
+
+class UserStats(db.Model):
+    __tablename__ = 'user_stats'
+    uid = db.Column(db.Integer, db.ForeignKey('user.uid'), primary_key=True)
+    total_races = db.Column(db.Integer, nullable=False)
+    wins = db.Column(db.Integer, nullable=False)
+    win_rate = db.Column(db.Float, nullable=False)
+    best_speed = db.Column(db.Integer, nullable=False)
+    user = db.relationship('User', uselist=False)

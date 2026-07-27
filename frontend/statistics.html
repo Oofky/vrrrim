@@ -53,17 +53,6 @@
             </div>
         </div>
 
-        <!-- Speed over race chart -->
-        <div
-            style="background: #161B22; border: 1px solid #30363D; border-radius: 12px; padding: 24px; margin-bottom: 36px;">
-            <h3
-                style="font-family: 'Barlow', sans-serif; color: #F5F0E8; font-size: 15px; font-weight: 700; margin-bottom: 16px;">
-                Speed Over Time</h3>
-            <div style="position: relative; width: 100%; height: 350px; display: flex; justify-content: center; align-items: center;">
-                <canvas id="speedChart" role="img" aria-label="Line chart for player's speed across races">No data yet.</canvas>
-            </div>
-        </div>
-
         <!-- Global leaderboard -->
         <div style="background: #161B22; border: 1px solid #30363D; border-radius: 12px; padding: 24px;">
             <h3
@@ -115,61 +104,5 @@
         </div>
     </div>
 
-    <script>
-        // Chart for speed over race using Chart.js
-        const ctx = document.getElementById('speedChart').getContext('2d'); // Create a new Chart instance
-
-        const speedChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['Race 1', 'Race 2', 'Race 3', 'Race 4', 'Race 5', 'Race 6', 'Race 7'], // TOOD: Use Jinja2 to convert Python list to JSON for JavaScript 
-                datasets: [{
-                    label: 'Speed',
-                    data: [12, 19, 3, 5, 2, 3, 15], // TODO: Use Jinja2 to convert Python list to JSON for JavaScript
-                    borderColor: '#00BFFF',
-                    backgroundColor: 'rgba(0, 191, 255, 0.2)',
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false, // Ensure chart fits within the container
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Race Number',
-                            color: '#8B949E',
-                        }, 
-                        ticks: {
-                            color: '#8B949E',
-                        },
-                        grid: {
-                            color: '#1C2128',
-                        }
-                    }, 
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Speed (WPM)',
-                            color: '#8B949E',
-                        },
-                        ticks: { 
-                            color: '#8B949E',
-                        }, grid: { 
-                            color: '#1C2128',
-                        }, 
-                        beginAtZero: true 
-                    }
-                }
-            }
-        });
-    </script>
 </body>
 </html>
