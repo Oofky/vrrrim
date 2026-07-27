@@ -337,7 +337,7 @@ def register_routes(app, db, bcrypt, socketio):
                 room = db.session.get(Room, room_code)
                 if room:
                     text_num = room.text_num
-                    speed = math.floor(text_to_levenshtein[text_num] / time_taken)
+                    speed = math.floor(text_to_levenshtein[text_num] / time_taken * 60)
 
                 # Update user data
                 user_data = db.session.get(UserStats, current_user.get_id())
