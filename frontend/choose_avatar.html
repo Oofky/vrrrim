@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>vrrrim</title>
+    <title>vrrrim - choose avatar</title>
     <link rel="icon" href="assets/logos/favicon.ico">
 
     <!-- Bootstrap CSS -->
@@ -23,7 +23,25 @@
 
 <body>
     <div>
-        <img src="assets/logos/logo.png" alt="vrrrim logo" class="logo" height="50px">
+        <nav style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 12px 32px;">
+            <div style="display: flex; justify-content: flex-start;">
+                <button onclick="window.location.href='{{ url_for('logout') }}';" style="background: transparent; border: 1px solid #F5F0E8; color: #F5F0E8;
+                       padding: 8px 18px; font-family: 'Barlow', sans-serif; cursor: pointer; border-radius: 6px;">
+                    Logout
+                </button>
+            </div>
+
+            <div style="display: flex; justify-content: center;">
+                <img src="assets/logos/logo.png" alt="vrrrim logo" style="height: 50px; cursor: pointer;">
+            </div>
+
+            <div style="display: flex; justify-content: flex-end;">
+                <button onclick="window.location.href='{{ url_for('statistics') }}';" style="background: transparent; border: 1px solid #F5F0E8; color: #F5F0E8;
+                       padding: 8px 18px; font-family: 'Barlow', sans-serif; cursor: pointer; border-radius: 6px;">
+                    Leaderboard and Stats
+                </button>
+            </div>
+        </nav>
     </div>
 
     <div id="testing">
@@ -34,61 +52,45 @@
 
         <div id="choose-avatar">
             <div id="avatars">
-                <img src="assets/logos/avatar.png" class="avatar" id="default-avatar" alt="Default Avatar"> 
+                <img src="assets/logos/avatar.png" class="avatar" id="default-avatar" alt="Default Avatar">
             </div>
             <div id="color-picker">
                 <label style="color: #F5F0E8; font-family: 'Barlow', sans-serif; 
                 display: block; text-align: left; margin-bottom: 10px;">Car Colour</label>
-                
+
                 <!-- Color Swatches -->
                 <div id="swatches">
-                    <button class="swatch" 
-                        data-color="brightness(0) saturate(100%) invert(55%) sepia(51%) saturate(3077%) hue-rotate(164deg) brightness(105%) contrast(108%)" 
-                        data-hex="#00BFFF"
-                        data-name="Neon Cyan"
-                        style="background:#00BFFF;"></button>
+                    <button class="swatch"
+                        data-color="brightness(0) saturate(100%) invert(55%) sepia(51%) saturate(3077%) hue-rotate(164deg) brightness(105%) contrast(108%)"
+                        data-hex="#00BFFF" data-name="Neon Cyan" style="background:#00BFFF;"></button>
 
-                    <button class="swatch" 
-                        data-color="brightness(0) saturate(100%) invert(57%) sepia(38%) saturate(6145%) hue-rotate(343deg) brightness(107%) contrast(101%)" 
-                        data-hex="#FF6B2B"
-                        data-name="Orange"
-                        style="background:#FF6B2B;"></button>
+                    <button class="swatch"
+                        data-color="brightness(0) saturate(100%) invert(57%) sepia(38%) saturate(6145%) hue-rotate(343deg) brightness(107%) contrast(101%)"
+                        data-hex="#FF6B2B" data-name="Orange" style="background:#FF6B2B;"></button>
 
-                    <button class="swatch" 
-                        data-color="brightness(0) saturate(100%) invert(63%) sepia(99%) saturate(987%) hue-rotate(1deg) brightness(104%) contrast(103%)" 
-                        data-hex="#FFB800"
-                        data-name="Yellow"
-                        style="background:#FFB800;"></button>
+                    <button class="swatch"
+                        data-color="brightness(0) saturate(100%) invert(63%) sepia(99%) saturate(987%) hue-rotate(1deg) brightness(104%) contrast(103%)"
+                        data-hex="#FFB800" data-name="Yellow" style="background:#FFB800;"></button>
 
-                    <button class="swatch" 
-                        data-color="brightness(0) saturate(100%) invert(25%) sepia(60%) saturate(5799%) hue-rotate(256deg) brightness(97%) contrast(92%)" 
-                        data-hex="#7C3AED"
-                        data-name="Purple"
-                        style="background:#7C3AED;"></button>
+                    <button class="swatch"
+                        data-color="brightness(0) saturate(100%) invert(25%) sepia(60%) saturate(5799%) hue-rotate(256deg) brightness(97%) contrast(92%)"
+                        data-hex="#7C3AED" data-name="Purple" style="background:#7C3AED;"></button>
 
-                    <button class="swatch" 
-                        data-color="brightness(0) saturate(100%) invert(60%) sepia(99%) saturate(2226%) hue-rotate(136deg) brightness(100%) contrast(101%)" 
-                        data-hex="#00CEC9"
-                        data-name="Teal"
-                        style="background:#00CEC9;"></button>
+                    <button class="swatch"
+                        data-color="brightness(0) saturate(100%) invert(60%) sepia(99%) saturate(2226%) hue-rotate(136deg) brightness(100%) contrast(101%)"
+                        data-hex="#00CEC9" data-name="Teal" style="background:#00CEC9;"></button>
 
-                    <button class="swatch" 
+                    <button class="swatch"
                         data-color="brightness(0) saturate(100%) invert(38%) sepia(67%) saturate(2243%) hue-rotate(307deg) brightness(95%) contrast(91%)"
-                        data-hex="#E84393"
-                        data-name="Pink"
-                        style="background:#E84393;"></button>
+                        data-hex="#E84393" data-name="Pink" style="background:#E84393;"></button>
 
-                    <button class="swatch" 
-                        data-color="brightness(0) saturate(100%) invert(63%) sepia(100%) saturate(362%) hue-rotate(42deg) brightness(95%) contrast(97%)" 
-                        data-hex="#7ED321"
-                        data-name="Lime"
-                        style="background:#7ED321;"></button>
+                    <button class="swatch"
+                        data-color="brightness(0) saturate(100%) invert(63%) sepia(100%) saturate(362%) hue-rotate(42deg) brightness(95%) contrast(97%)"
+                        data-hex="#7ED321" data-name="Lime" style="background:#7ED321;"></button>
 
-                    <button class="swatch" 
-                        data-color="brightness(0) saturate(100%) invert(32%) sepia(73%) saturate(4782%) hue-rotate(341deg) brightness(105%) contrast(82%)" 
-                        data-hex="#E8404A"
-                        data-name="Red"
-                        style="background:#E8404A;"></button>
+                    <button class="swatch"
+                        data-color="brightness(0) saturate(100%) invert(32%) sepia(73%) saturate(4782%) hue-rotate(341deg) brightness(105%) contrast(82%)"
+                        data-hex="#E8404A" data-name="Red" style="background:#E8404A;"></button>
                 </div>
                 <p id="color-name">White</p>
             </div>

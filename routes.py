@@ -3,8 +3,8 @@ from flask_login import current_user, login_user, logout_user
 from flask_socketio import emit, join_room, leave_room
 from pathlib import Path
 from sqlalchemy import func, select
-import random, re, string, time
-from models import PlayerInRoom, Room, User
+import math, random, re, string, time
+from models import PlayerInRoom, Room, User, UserStats
 
 def register_routes(app, db, bcrypt, socketio):
 
@@ -36,8 +36,11 @@ def register_routes(app, db, bcrypt, socketio):
                     if username_exists(username): return signup_failed_taken()
                     if not valid_username.match(username): return signup_failed_char()
                     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-                    user = User(username=username, password=hashed_password) #TODO: Add email field, also possibly a confirm password field
+                    user = User(username=username, password=hashed_password)
                     db.session.add(user)
+                    db.session.commit()
+                    user_data = UserStats(uid=user.get_id(), total_races=0, wins=0, win_rate=100.0, best_speed=0)
+                    db.session.add(user_data)
                     db.session.commit()
                     login_user(user)
                 
@@ -87,11 +90,43 @@ def register_routes(app, db, bcrypt, socketio):
                 clear_session_data()
                 return redirect(url_for('index'))
             
-    @app.route('/logout') #TODO: Add a logout button somewhere
+    @app.route('/logout') # logout button in choose_avatar.html 
     def logout():
         logout_user()
         return redirect(url_for('index'))
+
+    @app.route('/statistics')
+    def statistics():
+        if not current_user.is_authenticated: # not needed because you can't access this page without logging in, but just in case
+            return redirect(url_for('index'))
+
+        # Query the database for the user's statistics and pass them to the template
+        user_data = db.session.get(UserStats, current_user.get_id())
+        user_stats = {
+            'total_races': user_data.total_races,
+            'wins': user_data.wins,
+            'win_rate': user_data.win_rate,
+            'best_speed': str(user_data.best_speed) + ' CPM'
+        }
+
+        # Query your DB for top players - MUST SORT BY WINS DESCENDING, THEN BEST SPEED DESCENDING, THEN TOTAL RACES DESCENDING
+        top_players = db.session.scalars(
+            select(UserStats).order_by(UserStats.wins.desc(), UserStats.best_speed.desc(), UserStats.total_races.desc()).limit(10)
+        ).all()
+        global_leaderboard = []
+
+        for plr in top_players:
+            global_leaderboard.append(
+                {
+                    'username': plr.user.username,
+                    'wins': plr.wins,
+                    'best_speed': str(plr.best_speed) + ' CPM',
+                    'total_races': plr.total_races
+                }
+            )
         
+        return render_template('statistics.html', user_stats=user_stats, global_leaderboard=global_leaderboard)
+
     # Helper functions for Flask routes
     
     def login_failed():
@@ -266,6 +301,8 @@ def register_routes(app, db, bcrypt, socketio):
     # SocketIO game loop events
 
     game_progress = {}
+    index_to_placement = ['1ST PLACE', '2ND PLACE', '3RD PLACE', '4TH PLACE', '5TH PLACE', '6TH PLACE']
+    text_to_levenshtein = [44, 93, 228, 30, 156, 43, 188, 14, 178, 140]
     
     @socketio.on('start_game')
     def start_all_games():
@@ -294,10 +331,30 @@ def register_routes(app, db, bcrypt, socketio):
             if progress >= 100 and request.sid not in room_progress['rankings']: 
                 room_progress['rankings'].append(request.sid)
                 i = room_progress['rankings'].index(request.sid)
+                time_taken = round(time.perf_counter() - room_progress['start_time'], 2)
+                speed = 0
+
+                room = db.session.get(Room, room_code)
+                if room:
+                    text_num = room.text_num
+                    speed = math.floor(text_to_levenshtein[text_num] / time_taken)
+
+                # Update user data
+                user_data = db.session.get(UserStats, current_user.get_id())
+                if user_data:
+                    user_data.total_races += 1
+                    if i == 0:
+                        user_data.wins += 1
+                    user_data.win_rate = round(user_data.wins / user_data.total_races, 2)
+                    if speed > user_data.best_speed:
+                        user_data.best_speed = speed
+                db.session.commit()
+
                 socketio.emit('winner', 
                               {
-                                'placement': index_to_placement[i],
-                                'time_taken': str(round(time.perf_counter() - room_progress['start_time'], 2)) + 's'
+                                'placement': i,
+                                'speed': str(speed) + ' CPM', 
+                                'time': str(time_taken) + 's'
                               }, to=request.sid) # Emit to the winner only
                 socketio.emit('placement_label', 
                               {
@@ -306,8 +363,6 @@ def register_routes(app, db, bcrypt, socketio):
                               }, to=room_code)      
 
     # Helper functions for SocketIO game loop events
-
-    index_to_placement = ["1st", "2nd", "3rd", "4th", "5th"]
 
     def game_loop(room_code, app_para): 
         # Need to get app context bcuz if not, I get error saying "Working outside application context"

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>vrrrim</title>
+    <title>vrrrim - race room</title>
     <link rel="icon" href="assets/logos/favicon.ico">
 
     <link href="css/base.css" rel="stylesheet">
@@ -42,7 +42,7 @@
             },
             paste: (event) => {
                 event.preventDefault();
-                return true; 
+                return true;
             },
             cut: (event) => {
                 event.preventDefault();
@@ -122,7 +122,9 @@
         </span>
         <div style="display: flex; align-items: center; gap: 20px;">
             <button data-cheatsheet="true" style="background: transparent; border: 1px solid #F5F0E8; color: #F5F0E8;
-                       padding: 8px 18px; font-family: 'Barlow', sans-serif; cursor: pointer;">Vim Cheatsheet</button>
+                       padding: 8px 18px; font-family: 'Barlow', sans-serif; cursor: pointer;">
+                Vim Cheatsheet<span style="color: #8B949E; font-size: 13px; margin-left: 6px;">F1</span>
+            </button>
         </div>
     </nav>
 
@@ -161,8 +163,6 @@
             </div>
             <div style="flex: 1; background: #1C2128; border: 1px solid #30363D; border-top: none; border-left: none;
                     padding: 4px 12px; display: flex; justify-content: space-between;">
-                <span style="color: #8B949E; font-family: 'Barlow', sans-serif; font-size: 12px;">3 lines</span>
-                <span style="color: #8B949E; font-family: 'Barlow', sans-serif; font-size: 12px;">67 characters</span>
             </div>
         </div>
     </div>
@@ -193,7 +193,7 @@
                         <div class="cheat-item"><kbd>gg</kbd><span>Move cursor to beginning of file</span></div>
                     </div>
                     <div class="cheatsheet-col">
-                        <h3 class="col-title">Editing</h3>
+                        <h3 class="col-title">Editing (Press i to start inserting)</h3>
                         <div class="cheat-item"><kbd>i</kbd><span>Insert before cursor</span></div>
                         <div class="cheat-item"><kbd>a</kbd><span>Insert after cursor</span></div>
                         <div class="cheat-item"><kbd>o</kbd><span>Open line below</span></div>
@@ -205,16 +205,53 @@
                         <div class="cheat-item"><kbd>p</kbd><span>Paste after cursor</span></div>
                     </div>
                     <div class="cheatsheet-col">
-                        <h3 class="col-title">Advanced</h3>
+                        <h3 class="col-title">Advanced (Copying and Pasting)</h3>
                         <div class="cheat-item"><kbd>yyp</kbd><span>Duplicate line</span></div>
+                        <div class="cheat-item"><kbd>yw</kbd><span> Copies the entire current word</span></div>
+                        <div class="cheat-item"><kbd>u</kbd><span>Undo</span></div>
+                        <div class="cheat-item"><kbd>r</kbd><span>Redo</span></div>
                         <div class="cheat-item"><kbd>ciw</kbd><span>Change inner word</span></div>
                         <div class="cheat-item"><kbd>ci"</kbd><span>Change inside quotes</span></div>
                         <div class="cheat-item"><kbd>di{</kbd><span>Delete inside braces</span></div>
                         <div class="cheat-item"><kbd>>></kbd><span>Indent line</span></div>
-                        <div class="cheat-item"><kbd><<</kbd><span>Unindent line</span></div>
+                        <div class="cheat-item"><kbd>&lt;&lt;</kbd><span>Unindent line</span></div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Win screen overlay -->
+    <div id="win-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+     z-index: 2000; justify-content: center; align-items: center;">
+        <div id="win-modal" style="background: #161B22; border: 1px solid #30363D; border-radius: 16px;
+         padding: 40px 32px; width: 90%; max-width: 500px; text-align: center;">
+
+            <!-- Place & emoji -->
+            <div style="display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 8px;">
+                <span id="win-emoji" style="font-size: 48px;"></span>
+                <h1 id="win-place" style="font-family: 'Russo One', sans-serif; font-size: 48px; margin: 0;"></h1>
+            </div>
+            <p style="color: #8B949E; font-family: 'Barlow', sans-serif; margin-bottom: 28px;">Race Complete!</p>
+
+            <!-- Stats -->
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 28px;
+             background: #0D1117; border: 1px solid #30363D; border-radius: 10px; padding: 20px;">
+                <div>
+                    <p id="player-speed"
+                        style="font-family: 'Russo One', sans-serif; font-size: 28px; color: #00BFFF; margin: 0;"></p>
+                    <p style="font-family: 'Barlow', sans-serif; font-size: 12px; color: #8B949E; margin: 0;">Speed</p>
+                </div>
+                <div>
+                    <p id="player-time"
+                        style="font-family: 'Russo One', sans-serif; font-size: 28px; color: #FF6B2B; margin: 0;"></p>
+                    <p style="font-family: 'Barlow', sans-serif; font-size: 12px; color: #8B949E; margin: 0;">Time</p>
+                </div>
+            </div>
+
+            <p style="color: #8B949E; font-family: 'Barlow', sans-serif; font-size: 13px;">
+                Returning to lobby in <span id="redirect-countdown">5</span>s...
+            </p>
         </div>
     </div>
 
@@ -243,8 +280,21 @@
         });
     </script>
 
+    <!-- Vim cheatsheet keybind -->
+    <script>
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F1') {
+                e.preventDefault(); // stops browser help menu
+                const overlay = document.getElementById('cheatsheet-overlay');
+                overlay.classList.toggle('active');
+            }
+        });
+    </script>
+
     <!-- SocketIO -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"
+        integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA=="
+        crossorigin="anonymous"></script>
     <script type="text/javascript">
         var socketio = io();
 
@@ -285,7 +335,7 @@
                 }
                 bar_label += ' <strong>' + plr.placement + '</strong>';
                 total_html += create_bar(plr.id, bar_label, plr.car_filter);
-                
+
                 total_style += `
                     progress#progressBar${plr.id}::-webkit-progress-value {
                         background-color: ${plr.car_color} !important;
@@ -350,12 +400,35 @@
             }
         })
 
+        // Script for Win screen overlay
+        const placeLabels = ['1ST PLACE', '2ND PLACE', '3RD PLACE', '4TH PLACE', '5TH PLACE', '6TH PLACE'];
+        const placeEmojis = ['🥇', '🥈', '🥉', '🏅', '🏅', '🏅'];
+        const placeColors = ['#FFB800', '#B0B8C1', '#CD7F32', '#8B949E', '#8B949E', '#8B949E'];
+
         socketio.on('winner', (data) => {
+            const overlay = document.getElementById('win-overlay');
+            overlay.style.display = 'flex';
+
             const placement = data.placement;
-            const time_taken = data.time_taken;
-            alert('You got ' + placement + ' place!\nTime taken: ' + time_taken); //TODO: make this look nicer
-            location.href = '{{ url_for("index") }}';
-        })
+            const speed = data.speed;
+            const time = data.time;
+
+            document.getElementById('win-emoji').textContent = placeEmojis[placement] ?? '🏅';
+            document.getElementById('win-place').textContent = placeLabels[placement] ?? 'FINISHED';
+            document.getElementById('win-place').style.color = placeColors[placement] ?? '#8B949E';
+            document.getElementById('player-speed').textContent = speed ?? '-';
+            document.getElementById('player-time').textContent = time ?? '-';
+
+            let count = 5;
+            const ticker = setInterval(() => {
+                count--;
+                document.getElementById('redirect-countdown').textContent = count;
+                if (count <= 0) {
+                    clearInterval(ticker);
+                    location.href = '{{ url_for("index") }}';
+                }
+            }, 1000);
+        });
 
         socketio.on('placement_label', (data) => {
             const id = data.id;
@@ -365,6 +438,7 @@
                 bar_label.textContent = bar_label.textContent.slice(0, -3) + placement;
             }
         })
+
     </script>
 </body>
 
