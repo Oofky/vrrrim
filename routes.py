@@ -278,20 +278,16 @@ def register_routes(app, db, bcrypt, socketio):
             game_progress[session['code']] = {}
             game_progress[session['code']]['rankings'] = []
             game_progress[session['code']]['start_time'] = time.perf_counter()
-            emit('start_game', to=session['code'])
+            emit('start_game', session['code'], to=session['code'])
             socketio.start_background_task(game_loop, session['code'], app)
 
     @socketio.on('update_bar')
     def update_progress(data):
         plr_id = data[0]
         progress = data[1]
-        room_code = session.get('code') 
+        room_code = data[2]
 
-        if not room_code:
-            print('update_bar: no room code')
-            return
-
-        room_progress = game_progress.get(session['code'])
+        room_progress = game_progress.get(room_code)
 
         if room_progress is not None: # In case all players leave the room, then this will be None
             room_progress[plr_id] = progress
@@ -307,7 +303,7 @@ def register_routes(app, db, bcrypt, socketio):
                               {
                                 'id': db.session.scalar(select(PlayerInRoom).where(PlayerInRoom.socket_id == request.sid)).id,
                                 'placement': index_to_placement[i]
-                              }, to=session['code'])      
+                              }, to=room_code)      
 
     # Helper functions for SocketIO game loop events
 

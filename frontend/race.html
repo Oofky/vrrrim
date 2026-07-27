@@ -100,14 +100,14 @@
             });
         };
 
-        window.calc_progress_loop = (id) => { // So the socketIO script below can use it
+        window.calc_progress_loop = (id, room_code) => { // So the socketIO script below can use it
             const diffs = dmp.diff_main(view.a.state.doc.toString(), result_doc);
             const dist = dmp.diff_levenshtein(diffs);
             const progress = Math.max(0, Math.floor((maxDist - dist) / maxDist * 100));
  
-            window.fire_progress(id, progress);
+            window.fire_progress(id, progress, room_code);
 
-            setTimeout(calc_progress_loop, 200, id);
+            setTimeout(calc_progress_loop, 200, id, room_code);
         }
     </script>
 
@@ -259,7 +259,8 @@
                 </div>`;
         }
 
-        window.fire_progress = (id, progress) => socketio.emit('update_bar', [id, progress]); // So the code mirror script above can use it
+        window.fire_progress = (id, progress, room_code) => 
+            socketio.emit('update_bar', [id, progress, room_code]); // So the code mirror script above can use it
         let my_id = null;
 
         socketio.on('players_bars', (data) => {
@@ -312,7 +313,7 @@
         startButton.addEventListener('click', () => socketio.emit('start_game'));
 
         // Detect event to start
-        socketio.on('start_game', () => {
+        socketio.on('start_game', (room_code) => {
             // Disable the button so player cannot click it multiple times
             startButton.disabled = true;
 
@@ -330,7 +331,7 @@
                 window.set_left_editor_editable();
 
                 // Start calculating progress
-                window.calc_progress_loop(my_id);
+                window.calc_progress_loop(my_id, room_code);
             })
         })
 
