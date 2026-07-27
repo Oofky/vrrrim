@@ -345,7 +345,7 @@ def register_routes(app, db, bcrypt, socketio):
                     user_data.total_races += 1
                     if i == 0:
                         user_data.wins += 1
-                    user_data.win_rate = round(user_data.wins / user_data.total_races, 2)
+                    user_data.win_rate = round(user_data.wins / user_data.total_races * 100, 1)
                     if speed > user_data.best_speed:
                         user_data.best_speed = speed
                 db.session.commit()
